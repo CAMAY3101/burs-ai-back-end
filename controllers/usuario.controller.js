@@ -19,8 +19,13 @@ const usuarioController = {
             await usuarioModel.addUsuario(nombre, apellidos, edad, correo, telefono);
             res.json({message: 'Usuario agregado exitosamente'});
         } catch (error) {
-            console.error(error);
-            res.status(500).json({error: "Error interno del servidor"});
+            if (error.code === '23505' && error.constraint === 'unique_correo') {
+                // Manejar el error de correo electrónico duplicado
+                res.status(400).json({ error: 'El correo electrónico ya está registrado' });
+            } else {
+                console.error(error);
+                res.status(500).json({ error: 'Error interno del servidor' });
+            }
         }
     },
 };
