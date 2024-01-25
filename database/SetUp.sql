@@ -18,9 +18,10 @@ CREATE DATABASE dummy_test
 CREATE TABLE usuarios (
     id_usuario SERIAL PRIMARY KEY NOT NULL,
     nombre VARCHAR(255) NOT NULL,
+    apellidos VARCHAR(255) NOT NULL,
     edad INT NOT NULL,
-    telefono INT NOT NULL,
-    correo VARCHAR(255) NOT NULL
+    correo VARCHAR(255) NOT NULL,
+    telefono INT NOT NULL
 );
 
 CREATE TABLE historial (
@@ -30,7 +31,7 @@ CREATE TABLE historial (
     ocupacion VARCHAR(255),
     industria VARCHAR(255),
     subindustria VARCHAR(255),
-    pago_a_traves_de_banco BOOLEAN,\
+    pago_a_traves_de_banco BOOLEAN,
     salario_familiar INT,
     calificacion_crediticia VARCHAR(10),
     uso_prestamo VARCHAR(255)
