@@ -1,4 +1,4 @@
-const {db} = require('../database/db.server');
+const {db} = require('../services/db.server');
 
 const usuarioModel = {
     getUsuarios: () => {
