@@ -1,7 +1,7 @@
 const {db} = require('../services/db.server')
-const admin = require('firebase-admin');
+const {generateFirebaseVerificationLink, createUserFirebaseAuth} = require('../services/firebase.auth')
 const dotenv = require('dotenv')
-const transporter = require('../services/nodemailer.config');
+const {sendEmail} = require('../services/sendgrid.config');
 dotenv.config()
 
 const usuarioModel = require('../models/usuario.model')
@@ -29,34 +29,15 @@ const usuarioController = {
 
             // // Llamar a la función del modelo para agregar un usuario a la base de datos
             await usuarioModel.addUsuario(usuario.nombre, usuario.apellidos, usuario.edad, usuario.correo, usuario.telefono); 
+            
+            const userRecord = await createUserFirebaseAuth(usuario.correo);
+            // Generar enlace de verificación de Firebase Auth
+            const verificationLink = await generateFirebaseVerificationLink(usuario.correo);
 
-            // Crear un usuario en Firebase Authentication
-            const userRecord = await admin.auth().createUser({
-                email: usuario.correo,
-                emailVerified: false,
-                disabled: false
-            });
+            // Enviar correo electrónico con el enlace de verificación
+            sendEmail(usuario.correo, verificationLink);
 
-            await userRecord.toJSON(); // Esperar a que se cree el usuario
-
-            const verificationLink = await admin.auth().generateEmailVerificationLink(userRecord.email);
-            console.log(verificationLink);
-
-            const mailOptions = {
-                from: process.env.BURS_EMAIL,
-                to: usuario.correo,
-                subject: 'Verificación de Correo Electrónico',
-                text: `Haz clic en el siguiente enlace para verificar tu correo electrónico en burs: ${verificationLink}`,
-            };
-
-            transporter.sendMail(mailOptions, function(err, data) {
-                if(err) {
-                    console.log("Error " + err);
-                } else {
-                    res.json("Email sent successfully");
-                }
-            });
-            res.json({ message: 'Usuario agregado exitosamente. Se ha enviado un correo de verificación.' });
+            res.json({ message: 'Usuario registrado con éxito' });
 
         } catch (error) {
             if (error.code === '23505' && error.constraint === 'unique_correo') {
