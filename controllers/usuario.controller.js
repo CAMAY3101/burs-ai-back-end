@@ -1,4 +1,8 @@
-const {db} = require('../database/db.server')
+const {db} = require('../services/db.server')
+const {generateFirebaseVerificationLink, createUserFirebaseAuth} = require('../services/firebase.auth')
+const dotenv = require('dotenv')
+const {sendEmail} = require('../services/sendgrid.config');
+dotenv.config()
 
 const usuarioModel = require('../models/usuario.model')
 
@@ -15,9 +19,26 @@ const usuarioController = {
     },
     addUsuario: async (req, res) => {
         try {
-            const {nombre, apellidos, edad, correo, telefono} = req.body;
-            await usuarioModel.addUsuario(nombre, apellidos, edad, correo, telefono);
-            res.json({message: 'Usuario agregado exitosamente'});
+            const usuario = {
+                nombre: req.body.nombre,
+                apellidos: req.body.apellidos,
+                edad: req.body.edad,
+                correo: req.body.correo,
+                telefono: req.body.telefono
+            };
+
+            // // Llamar a la función del modelo para agregar un usuario a la base de datos
+            await usuarioModel.addUsuario(usuario.nombre, usuario.apellidos, usuario.edad, usuario.correo, usuario.telefono); 
+            
+            const userRecord = await createUserFirebaseAuth(usuario.correo);
+            // Generar enlace de verificación de Firebase Auth
+            const verificationLink = await generateFirebaseVerificationLink(usuario.correo);
+
+            // Enviar correo electrónico con el enlace de verificación
+            sendEmail(usuario.correo, verificationLink);
+
+            res.json({ message: 'Usuario registrado con éxito' });
+
         } catch (error) {
             if (error.code === '23505' && error.constraint === 'unique_correo') {
                 // Manejar el error de correo electrónico duplicado
@@ -26,6 +47,24 @@ const usuarioController = {
                 console.error(error);
                 res.status(500).json({ error: 'Error interno del servidor' });
             }
+        }
+    },
+    verifyEmail: async (req, res) => {
+        try {
+            const userId = req.params.userId;
+            const emailVerificationCode = req.params.emailVerificationCode;
+
+            // Validar el enlace de verificación utilizando Firebase Auth
+            await verifyFirebaseEmailLink(userId, emailVerificationCode);
+
+            // Actualizar el estado de verificación en la base de datos
+            await usuarioModel.updateEmailVerificationStatus(userId, true);
+
+            res.json({ message: 'Correo electrónico verificado con éxito' });
+
+        } catch (error) {
+            // Manejar errores como lo haces actualmente
+            console.error(error);  
         }
     },
 };
