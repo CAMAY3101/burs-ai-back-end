@@ -19,7 +19,14 @@ const generateFirebaseVerificationLink = async (email) => {
     return link;
 };
 
+const verifyFirebaseEmailLink = async (userId, emailVerificationCode) => {
+    // Verificar el enlace utilizando Firebase Auth
+    await admin.auth().applyActionCode(emailVerificationCode);
+
+    // Personaliza según tu lógica
+};
 module.exports = {
     generateFirebaseVerificationLink,
-    createUserFirebaseAuth
+    createUserFirebaseAuth,
+    verifyFirebaseEmailLink
 };

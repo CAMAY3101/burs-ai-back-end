@@ -49,5 +49,23 @@ const usuarioController = {
             }
         }
     },
+    verifyEmail: async (req, res) => {
+        try {
+            const userId = req.params.userId;
+            const emailVerificationCode = req.params.emailVerificationCode;
+
+            // Validar el enlace de verificación utilizando Firebase Auth
+            await verifyFirebaseEmailLink(userId, emailVerificationCode);
+
+            // Actualizar el estado de verificación en la base de datos
+            await usuarioModel.updateEmailVerificationStatus(userId, true);
+
+            res.json({ message: 'Correo electrónico verificado con éxito' });
+
+        } catch (error) {
+            // Manejar errores como lo haces actualmente
+            console.error(error);  
+        }
+    },
 };
 module.exports = usuarioController;
