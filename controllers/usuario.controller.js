@@ -1,7 +1,7 @@
 const {db} = require('../services/db.server')
-const {generateFirebaseVerificationLink, createUserFirebaseAuth} = require('../services/firebase.auth')
 const dotenv = require('dotenv')
 const {sendEmail} = require('../services/sendgrid.config');
+const twilioService = require('../services/twilio.service');
 dotenv.config()
 
 const usuarioModel = require('../models/usuario.model')
@@ -27,15 +27,11 @@ const usuarioController = {
                 telefono: req.body.telefono
             };
 
-            // // Llamar a la función del modelo para agregar un usuario a la base de datos
-            await usuarioModel.addUsuario(usuario.nombre, usuario.apellidos, usuario.edad, usuario.correo, usuario.telefono); 
-            
-            const userRecord = await createUserFirebaseAuth(usuario.correo);
-            // Generar enlace de verificación de Firebase Auth
-            const verificationLink = await generateFirebaseVerificationLink(usuario.correo);
+            await twilioService.sendOTP_Email(usuario.correo);
+            await twilioService.sendOTP_PhoneNumber(usuario.telefono);
 
-            // Enviar correo electrónico con el enlace de verificación
-            sendEmail(usuario.correo, verificationLink);
+            // // Llamar a la función del modelo para agregar un usuario a la base de datos
+            const usuarioDatabase = await usuarioModel.addUsuario(usuario.nombre, usuario.apellidos, usuario.edad, usuario.correo, usuario.telefono); 
 
             res.json({ message: 'Usuario registrado con éxito' });
 
@@ -51,20 +47,38 @@ const usuarioController = {
     },
     verifyEmail: async (req, res) => {
         try {
-            const userId = req.params.userId;
-            const emailVerificationCode = req.params.emailVerificationCode;
+            const { email, code } = req.body;
 
-            // Validar el enlace de verificación utilizando Firebase Auth
-            await verifyFirebaseEmailLink(userId, emailVerificationCode);
+            // Verificar el código de correo electrónico utilizando Twilio
+            const verificationCheck = await twilioService.verifyEmail(email, code);
 
-            // Actualizar el estado de verificación en la base de datos
-            await usuarioModel.updateEmailVerificationStatus(userId, true);
+            if (verificationCheck.status === 'approved') {
+                // Actualizar el estado de verificación en la base de datos
+                await usuarioModel.updateEmailVerificationStatus(email, true);
 
-            res.json({ message: 'Correo electrónico verificado con éxito' });
-
+                res.json({ message: 'Correo electrónico verificado con éxito' });
+            } else {
+                res.status(400).json({ error: 'La verificación del correo electrónico falló' });
+            }
         } catch (error) {
-            // Manejar errores como lo haces actualmente
-            console.error(error);  
+            console.error("Error en verifyEmail de usuario.controller.js");
+            console.error(error);
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
+    },
+    verifyPhoneNumber: async (req, res) => {
+        try {
+            const phoneNumber = req.body.phoneNumber; // Número de teléfono del usuario
+            const code = req.body.code; // Código de verificación ingresado por el usuario
+
+            // Verificar el código OTP utilizando Twilio
+            await twilioService.verifyOTP(phoneNumber, code);
+
+            res.json({ message: 'Número de teléfono verificado con éxito' });
+        } catch (error) {
+            console.error("Error en verifyPhoneNumber de usuario.controller.js");
+            console.error(error);
+            res.status(500).json({ error: 'Error interno del servidor' });
         }
     },
 };
