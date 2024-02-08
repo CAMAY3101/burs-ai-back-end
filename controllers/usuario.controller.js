@@ -66,5 +66,20 @@ const usuarioController = {
             res.status(500).json({ error: 'Error interno del servidor' });
         }
     },
+    verifyPhoneNumber: async (req, res) => {
+        try {
+            const phoneNumber = req.body.phoneNumber; // Número de teléfono del usuario
+            const code = req.body.code; // Código de verificación ingresado por el usuario
+
+            // Verificar el código OTP utilizando Twilio
+            await twilioService.verifyOTP(phoneNumber, code);
+
+            res.json({ message: 'Número de teléfono verificado con éxito' });
+        } catch (error) {
+            console.error("Error en verifyPhoneNumber de usuario.controller.js");
+            console.error(error);
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
+    },
 };
 module.exports = usuarioController;

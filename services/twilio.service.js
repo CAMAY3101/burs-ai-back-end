@@ -49,8 +49,24 @@ const sendOTP_PhoneNumber = async (phoneNumber) => {
     }
 };
 
+const verifyOTP_PhoneNumber = async (phoneNumber, code) => {
+    try {
+        const otpResponse = await client.verify.v2
+            .services(TWILIO_SERVICE_SID)
+            .verificationChecks.create({
+                to: phoneNumber,
+                code: code
+            });
+        console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
+};
+
 module.exports = {
     sendOTP_Email,
     verifyOTP_Email,
-    sendOTP_PhoneNumber
+    sendOTP_PhoneNumber,
+    verifyOTP_PhoneNumber
 }
