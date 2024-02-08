@@ -5,6 +5,5 @@ const usuarioController = require('../controllers/usuario.controller');
 
 usuarioRouter.get('/getUsuarios', usuarioController.getUsuarios);
 usuarioRouter.post('/addUsuario', usuarioController.addUsuario);
-usuarioRouter.get('/verifyEmail/:userId/:emailVerificationCode', usuarioController.verifyEmail);
 
 module.exports = usuarioRouter; 

@@ -1,7 +1,7 @@
 const {db} = require('../services/db.server')
-const {generateFirebaseVerificationLink, createUserFirebaseAuth} = require('../services/firebase.auth')
 const dotenv = require('dotenv')
 const {sendEmail} = require('../services/sendgrid.config');
+const twilioService = require('../services/twilio.service');
 dotenv.config()
 
 const usuarioModel = require('../models/usuario.model')
@@ -27,15 +27,10 @@ const usuarioController = {
                 telefono: req.body.telefono
             };
 
-            // // Llamar a la función del modelo para agregar un usuario a la base de datos
-            await usuarioModel.addUsuario(usuario.nombre, usuario.apellidos, usuario.edad, usuario.correo, usuario.telefono); 
-            
-            const userRecord = await createUserFirebaseAuth(usuario.correo);
-            // Generar enlace de verificación de Firebase Auth
-            const verificationLink = await generateFirebaseVerificationLink(usuario.correo);
+            await twilioService.sendOTP_Email(usuario.correo);
 
-            // Enviar correo electrónico con el enlace de verificación
-            sendEmail(usuario.correo, verificationLink);
+            // // Llamar a la función del modelo para agregar un usuario a la base de datos
+            const usuarioDatabase = await usuarioModel.addUsuario(usuario.nombre, usuario.apellidos, usuario.edad, usuario.correo, usuario.telefono); 
 
             res.json({ message: 'Usuario registrado con éxito' });
 
@@ -47,24 +42,6 @@ const usuarioController = {
                 console.error(error);
                 res.status(500).json({ error: 'Error interno del servidor' });
             }
-        }
-    },
-    verifyEmail: async (req, res) => {
-        try {
-            const userId = req.params.userId;
-            const emailVerificationCode = req.params.emailVerificationCode;
-
-            // Validar el enlace de verificación utilizando Firebase Auth
-            await verifyFirebaseEmailLink(userId, emailVerificationCode);
-
-            // Actualizar el estado de verificación en la base de datos
-            await usuarioModel.updateEmailVerificationStatus(userId, true);
-
-            res.json({ message: 'Correo electrónico verificado con éxito' });
-
-        } catch (error) {
-            // Manejar errores como lo haces actualmente
-            console.error(error);  
         }
     },
 };

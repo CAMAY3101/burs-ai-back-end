@@ -3,17 +3,9 @@ const app = express()
 const dotenv = require('dotenv')
 dotenv.config()
 
-const bodyParser = require('body-parser')
-const twilioRouter = require('./routes/twilio-sms');
-const jsonParser = bodyParser.json();
-
 const port = process.env.PORT
 
 app.use(express.json())
-
-app.use(jsonParser); 
-app.use('/twilio-sms', twilioRouter);
-
 
 //Get principal
 app.get('/', (req, res, next) => {
