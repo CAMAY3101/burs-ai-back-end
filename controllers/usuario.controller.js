@@ -44,5 +44,26 @@ const usuarioController = {
             }
         }
     },
+    verifyEmail: async (req, res) => {
+        try {
+            const { email, code } = req.body;
+
+            // Verificar el código de correo electrónico utilizando Twilio
+            const verificationCheck = await twilioService.verifyEmail(email, code);
+
+            if (verificationCheck.status === 'approved') {
+                // Actualizar el estado de verificación en la base de datos
+                await usuarioModel.updateEmailVerificationStatus(email, true);
+
+                res.json({ message: 'Correo electrónico verificado con éxito' });
+            } else {
+                res.status(400).json({ error: 'La verificación del correo electrónico falló' });
+            }
+        } catch (error) {
+            console.error("Error en verifyEmail de usuario.controller.js");
+            console.error(error);
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
+    },
 };
 module.exports = usuarioController;

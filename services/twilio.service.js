@@ -17,8 +17,23 @@ const sendOTP_Email = async (email) => {
     }
 };
 
- 
+const verifyOTP_Email = async (email, code) => {
+    try {
+        const verificationCheck = await twilioClient.verify.v2
+            .services(TWILIO_SERVICE_SID)
+            .verificationChecks.create({
+                to: email,
+                code: code,
+            });
+
+        return verificationCheck;
+    } catch (err) {
+        console.error('Error al verificar el correo electrónico:', err);
+        throw err;
+    }
+};  
 
 module.exports = {
     sendOTP_Email,
+    verifyOTP_Email
 }
