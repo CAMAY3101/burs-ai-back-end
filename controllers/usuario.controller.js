@@ -28,6 +28,7 @@ const usuarioController = {
             };
 
             await twilioService.sendOTP_Email(usuario.correo);
+            await twilioService.sendOTP_PhoneNumber(usuario.telefono);
 
             // // Llamar a la función del modelo para agregar un usuario a la base de datos
             const usuarioDatabase = await usuarioModel.addUsuario(usuario.nombre, usuario.apellidos, usuario.edad, usuario.correo, usuario.telefono); 
