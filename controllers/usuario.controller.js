@@ -1,6 +1,5 @@
 const {db} = require('../services/db.server')
 const dotenv = require('dotenv')
-const {sendEmail} = require('../services/sendgrid.config');
 const twilioService = require('../services/twilio.service');
 dotenv.config()
 
@@ -45,6 +44,24 @@ const usuarioController = {
             }
         }
     },
+    //T04004-05	Crear end-point para crear usuario 
+    createUser: async (req, res) => {
+        try{
+            const usuario = {
+                correo: req.body.correo,
+                contrasena: req.body.contrasena
+            };
+            await usuarioModel.createUser(usuario.correo, usuario.contrasena);
+            res.json({ message: 'Usuario creado con éxito' });
+
+        }catch (error){
+            console.error("Error en createUser de usuario.controller.js");
+            console.error(error);
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
+    },
+
+
     verifyEmail: async (req, res) => {
         try {
             const { email, code } = req.body;

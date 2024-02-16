@@ -11,6 +11,9 @@ const usuarioModel = {
     updateEmailVerificationStatus: (userId, status) => {
         return db.none('UPDATE usuarios SET email_verified = $1 WHERE id = $2', [status, userId]);
     },
+    createUser: (correo, password) => {
+        return db.none('INSERT INTO usuarios (correo, contrasena, nombre, apellidos, edad, telefono) VALUES($1, $2, $3, $4, $5, $6)', [correo, password, '', '', 0, '']);
+    }
 };
 
 module.exports = usuarioModel;
