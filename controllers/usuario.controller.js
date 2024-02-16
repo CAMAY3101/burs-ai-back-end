@@ -1,6 +1,7 @@
 const {db} = require('../services/db.server')
 const dotenv = require('dotenv')
 const twilioService = require('../services/twilio.service');
+const bcrypt = require('bcrypt');
 dotenv.config()
 
 const usuarioModel = require('../models/usuario.model')
@@ -51,8 +52,14 @@ const usuarioController = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
             };
-            await usuarioModel.createUser(usuario.correo, usuario.contrasena);
-            res.json({ message: 'Usuario creado con éxito' });
+            // Encriptar la contraseña
+            hashPassword = await bcrypt.hash(usuario.contrasena, 12);
+            await usuarioModel.createUser(usuario.correo, hashPassword);
+            res.json({ 
+                message: 'Usuario creado con éxito', 
+                correo: usuario.correo,
+                contrasena: hashPassword
+            });
 
         }catch (error){
             console.error("Error en createUser de usuario.controller.js");
