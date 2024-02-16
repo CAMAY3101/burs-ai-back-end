@@ -13,7 +13,10 @@ const usuarioModel = {
     },
     createUser: (correo, password) => {
         return db.none('INSERT INTO usuarios (correo, contrasena, nombre, apellidos, edad, telefono) VALUES($1, $2, $3, $4, $5, $6)', [correo, password, '', '', 0, '']);
-    }
+    },
+    updateDataUser(nombre, apellidos, edad, telefono){
+        return db.none('UPDATE usuarios SET nombre = $1, apellidos = $2, edad = $3, telefono = $4', [nombre, apellidos, edad, telefono]);
+    },
 };
 
 module.exports = usuarioModel;

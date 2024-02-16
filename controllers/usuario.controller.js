@@ -44,25 +44,47 @@ const usuarioController = {
                 res.status(500).json({ error: 'Error interno del servidor' });
             }
         }
-    },
-    //T04004-05	Crear end-point para crear usuario 
+    }, 
     createUser: async (req, res) => {
         try{
             const usuario = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
             };
-            // Encriptar la contraseña
+            // Encriptar
+            hashEmail = await bcrypt.hash(usuario.correo, 12);
             hashPassword = await bcrypt.hash(usuario.contrasena, 12);
-            await usuarioModel.createUser(usuario.correo, hashPassword);
+            await usuarioModel.createUser(hashEmail, hashPassword);
             res.json({ 
                 message: 'Usuario creado con éxito', 
-                correo: usuario.correo,
+                correo: hashEmail,
                 contrasena: hashPassword
             });
 
         }catch (error){
             console.error("Error en createUser de usuario.controller.js");
+            console.error(error);
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
+    },
+    //T04004-06	Crear end-point para actualizar datos de usuario
+    updateDataUser: async (req, res) => {
+        try {
+            const usuario = {
+                nombre: req.body.nombre,
+                apellidos: req.body.apellidos,
+                edad: req.body.edad,
+                telefono: req.body.telefono
+            };
+            hashName = await bcrypt.hash(usuario.nombre, 12);
+            hashLastName = await bcrypt.hash(usuario.apellidos, 12);
+            hashPhone = await bcrypt.hash(usuario.telefono, 12);
+
+            await usuarioModel.updateDataUser(hashName, hashLastName, usuario.edad, hashPhone);
+            
+            res.json({ message: 'Datos de usuario actualizados con éxito' });
+        } catch (error) {
+            console.error("Error en updateDataUser de usuario.controller.js");
             console.error(error);
             res.status(500).json({ error: 'Error interno del servidor' });
         }
