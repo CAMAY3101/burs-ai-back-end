@@ -3,13 +3,13 @@ const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, { lazyLo
 
 const sendOTP_Email = async (email) => {
     try {
-        const verificationResponse = await client.verify.v2
+        const verificationSendResponse = await client.verify.v2
             .services(TWILIO_SERVICE_SID)
             .verifications.create({
                 to: email,
                 channel: 'email',
             });
-
+        return verificationSendResponse;
         //console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
     } catch (err) {
         console.error('Error al enviar el correo de verificación:', err);
@@ -19,7 +19,7 @@ const sendOTP_Email = async (email) => {
 
 const verifyOTP_Email = async (email, code) => {
     try {
-        const verificationCheck = await twilioClient.verify.v2
+        const verificationCheck = await client.verify.v2
             .services(TWILIO_SERVICE_SID)
             .verificationChecks.create({
                 to: email,
@@ -42,7 +42,8 @@ const sendOTP_PhoneNumber = async (phoneNumber) => {
                 to: phoneNumber,
                 channel: 'sms'
             });
-        console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
+        return otpResponse;
+        //console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
     } catch (err) {
         console.error(err);
         throw err;
@@ -57,7 +58,8 @@ const verifyOTP_PhoneNumber = async (phoneNumber, code) => {
                 to: phoneNumber,
                 code: code
             });
-        console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
+        return otpResponse;
+        //console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
     } catch (err) {
         console.error(err);
         throw err;

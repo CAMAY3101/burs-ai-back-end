@@ -17,12 +17,15 @@ CREATE DATABASE dummy_test
 
 CREATE TABLE usuarios (
     id_usuario SERIAL PRIMARY KEY NOT NULL,
+    correo VARCHAR(255) NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     apellidos VARCHAR(255) NOT NULL,
     edad INT NOT NULL,
-    correo VARCHAR(255) NOT NULL,
-    telefono INT NOT NULL
-);
+    telefono VARCHAR(20) NOT NULL,
+    correo_verificado BOOLEAN DEFAULT FALSE,
+    telefono_verificado BOOLEAN DEFAULT FALSE
+)
 
 CREATE TABLE historial (
     id_usuario INT REFERENCES usuarios(id_usuario) NOT NULL,
@@ -36,3 +39,7 @@ CREATE TABLE historial (
     calificacion_crediticia VARCHAR(10),
     uso_prestamo VARCHAR(255)
 );
+
+INSERT INTO usuarios (correo, contrasena, nombre, apellidos, edad, telefono) VALUES ('creyesa18@gmail.com', '123456', '', '', 0, '');
+ALTER TABLE usuarios
+    ADD COLUMN contrasena VARCHAR(255) NOT NULL;
