@@ -16,34 +16,6 @@ const usuarioController = {
             console.log(error);
             res.json({error: error});
         }
-    },
-    addUsuario: async (req, res) => {
-        try {
-            const usuario = {
-                nombre: req.body.nombre,
-                apellidos: req.body.apellidos,
-                edad: req.body.edad,
-                correo: req.body.correo,
-                telefono: req.body.telefono
-            };
-
-            await twilioService.sendOTP_Email(usuario.correo);
-            await twilioService.sendOTP_PhoneNumber(usuario.telefono);
-
-            // // Llamar a la función del modelo para agregar un usuario a la base de datos
-            const usuarioDatabase = await usuarioModel.addUsuario(usuario.nombre, usuario.apellidos, usuario.edad, usuario.correo, usuario.telefono); 
-
-            res.json({ message: 'Usuario registrado con éxito' });
-
-        } catch (error) {
-            if (error.code === '23505' && error.constraint === 'unique_correo') {
-                // Manejar el error de correo electrónico duplicado
-                res.status(400).json({ error: 'El correo electrónico ya está registrado' });
-            } else {
-                console.error(error);
-                res.status(500).json({ error: 'Error interno del servidor' });
-            }
-        }
     }, 
     createUser: async (req, res) => {
         try{
@@ -52,35 +24,40 @@ const usuarioController = {
                 contrasena: req.body.contrasena
             };
             // Encriptar
-            hashEmail = await bcrypt.hash(usuario.correo, 12);
             hashPassword = await bcrypt.hash(usuario.contrasena, 12);
-            await usuarioModel.createUser(hashEmail, hashPassword);
+            
+            // Crear el usuario en la base de datos
+            const result = await usuarioModel.createUser(usuario.correo, hashPassword);
             res.json({ 
                 message: 'Usuario creado con éxito', 
-                correo: hashEmail,
-                contrasena: hashPassword
+                id_usuario: result.id_usuario
             });
 
         }catch (error){
-            console.error("Error en createUser de usuario.controller.js");
-            console.error(error);
-            res.status(500).json({ error: 'Error interno del servidor' });
+            if (error.code === '23505' && error.constraint === 'unique_correo') {
+                // Manejar el error de correo electrónico duplicado
+                res.status(400).json({ error: 'El correo electrónico ya está registrado' });
+            } else {
+                console.error(error);
+                res.status(500).json({ error: 'Error interno del servidor' });
+            }
         }
     },
     //T04004-06	Crear end-point para actualizar datos de usuario
     updateDataUser: async (req, res) => {
         try {
             const usuario = {
+                id_usuario: req.body.id_usuario,
                 nombre: req.body.nombre,
                 apellidos: req.body.apellidos,
                 edad: req.body.edad,
                 telefono: req.body.telefono
             };
-            hashName = await bcrypt.hash(usuario.nombre, 12);
-            hashLastName = await bcrypt.hash(usuario.apellidos, 12);
-            hashPhone = await bcrypt.hash(usuario.telefono, 12);
 
-            await usuarioModel.updateDataUser(hashName, hashLastName, usuario.edad, hashPhone);
+            await usuarioModel.updateDataUser(usuario.id_usuario, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
+            const emailModel = await usuarioModel.getEmailUser(usuario.id_usuario);
+            console.log(emailModel);
+            await twilioService.sendOTP_Email(emailModel.correo);
             
             res.json({ message: 'Datos de usuario actualizados con éxito' });
         } catch (error) {
@@ -93,16 +70,27 @@ const usuarioController = {
 
     verifyEmail: async (req, res) => {
         try {
-            const { email, code } = req.body;
+            const usuario = {
+                id_usuario: req.body.id_usuario,
+                code: req.body.code
+            };
 
+            const emailModel = await usuarioModel.getEmailUser(usuario.id_usuario);
+            const phoneModel = await usuarioModel.getPhoneUser(usuario.id_usuario);
+
+            console.log(emailModel.correo);
             // Verificar el código de correo electrónico utilizando Twilio
-            const verificationCheck = await twilioService.verifyEmail(email, code);
+            const verificationCheck = await twilioService.verifyOTP_Email(emailModel.correo, usuario.code);
 
             if (verificationCheck.status === 'approved') {
                 // Actualizar el estado de verificación en la base de datos
-                await usuarioModel.updateEmailVerificationStatus(email, true);
+                // transformar usuario.id_usuario a integer
+                await usuarioModel.updateEmailVerificationStatus(usuario.id_usuario, true);
 
                 res.json({ message: 'Correo electrónico verificado con éxito' });
+
+                // Enviar el código de verificación al número de teléfono
+                const otpResponse = await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
             } else {
                 res.status(400).json({ error: 'La verificación del correo electrónico falló' });
             }
@@ -114,13 +102,25 @@ const usuarioController = {
     },
     verifyPhoneNumber: async (req, res) => {
         try {
-            const phoneNumber = req.body.phoneNumber; // Número de teléfono del usuario
-            const code = req.body.code; // Código de verificación ingresado por el usuario
+            const usuario = {
+                id_usuario: req.body.id_usuario,
+                code: req.body.code
+            };
+
+            const phoneModel = await usuarioModel.getPhoneUser(usuario.id_usuario);
 
             // Verificar el código OTP utilizando Twilio
-            await twilioService.verifyOTP(phoneNumber, code);
+            const verificationCheck = await twilioService.verifyOTP_PhoneNumber(phoneModel.telefono, usuario.code);
 
-            res.json({ message: 'Número de teléfono verificado con éxito' });
+            if (verificationCheck.status === 'approved') {
+                // Actualizar el estado de verificación en la base de datos
+                // transformar usuario.id_usuario a integer
+                await usuarioModel.updatePhoneVerificationStatus(usuario.id_usuario, true);
+
+                res.json({ message: 'Telefono verificado con éxito' });
+            } else {
+                res.status(400).json({ error: 'La verificación del telefono falló' });
+            }
         } catch (error) {
             console.error("Error en verifyPhoneNumber de usuario.controller.js");
             console.error(error);
