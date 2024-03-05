@@ -35,7 +35,6 @@ const usuarioController = {
 
         }catch (error){
             if (error.code === '23505' && error.constraint === 'unique_correo') {
-                // Manejar el error de correo electrónico duplicado
                 res.status(400).json({ error: 'El correo electrónico ya está registrado' });
             } else {
                 console.error(error);
@@ -43,7 +42,6 @@ const usuarioController = {
             }
         }
     },
-    //T04004-06	Crear end-point para actualizar datos de usuario
     updateDataUser: async (req, res) => {
         try {
             const usuario = {
@@ -56,7 +54,7 @@ const usuarioController = {
 
             await usuarioModel.updateDataUser(usuario.id_usuario, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
             const emailModel = await usuarioModel.getEmailUser(usuario.id_usuario);
-            console.log(emailModel);
+
             await twilioService.sendOTP_Email(emailModel.correo);
             
             res.json({ message: 'Datos de usuario actualizados con éxito' });
@@ -78,18 +76,12 @@ const usuarioController = {
             const emailModel = await usuarioModel.getEmailUser(usuario.id_usuario);
             const phoneModel = await usuarioModel.getPhoneUser(usuario.id_usuario);
 
-            console.log(emailModel.correo);
-            // Verificar el código de correo electrónico utilizando Twilio
             const verificationCheck = await twilioService.verifyOTP_Email(emailModel.correo, usuario.code);
 
             if (verificationCheck.status === 'approved') {
-                // Actualizar el estado de verificación en la base de datos
-                // transformar usuario.id_usuario a integer
                 await usuarioModel.updateEmailVerificationStatus(usuario.id_usuario, true);
 
                 res.json({ message: 'Correo electrónico verificado con éxito' });
-
-                // Enviar el código de verificación al número de teléfono
                 const otpResponse = await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
             } else {
                 res.status(400).json({ error: 'La verificación del correo electrónico falló' });
@@ -109,12 +101,9 @@ const usuarioController = {
 
             const phoneModel = await usuarioModel.getPhoneUser(usuario.id_usuario);
 
-            // Verificar el código OTP utilizando Twilio
             const verificationCheck = await twilioService.verifyOTP_PhoneNumber(phoneModel.telefono, usuario.code);
 
             if (verificationCheck.status === 'approved') {
-                // Actualizar el estado de verificación en la base de datos
-                // transformar usuario.id_usuario a integer
                 await usuarioModel.updatePhoneVerificationStatus(usuario.id_usuario, true);
 
                 res.json({ message: 'Telefono verificado con éxito' });
