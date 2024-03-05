@@ -24,3 +24,14 @@ app.use(require('./routes/routes'))
 app.listen(port, () => {
     console.log('Escuchando del puerto ' + port)
 });
+
+// middleware para manejar errores
+app.use((err, req, res, next) => {
+    err.statusCode = err.statusCode || 500;
+    err.status = err.status || 'error';
+
+    res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message
+    });
+})
