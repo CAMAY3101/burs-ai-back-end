@@ -10,9 +10,7 @@ const sendOTP_Email = async (email) => {
                 channel: 'email',
             });
         return verificationSendResponse;
-        //console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
     } catch (err) {
-        console.error('Error al enviar el correo de verificación:', err);
         throw err;
     }
 };
@@ -28,7 +26,6 @@ const verifyOTP_Email = async (email, code) => {
 
         return verificationCheck;
     } catch (err) {
-        console.error('Error al verificar el correo electrónico:', err);
         throw err;
     }
 };  
@@ -43,9 +40,7 @@ const sendOTP_PhoneNumber = async (phoneNumber) => {
                 channel: 'sms'
             });
         return otpResponse;
-        //console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
     } catch (err) {
-        console.error(err);
         throw err;
     }
 };
@@ -59,9 +54,7 @@ const verifyOTP_PhoneNumber = async (phoneNumber, code) => {
                 code: code
             });
         return otpResponse;
-        //console.log(`OTP verificado exitosamente: ${JSON.stringify(otpResponse)}`);
     } catch (err) {
-        console.error(err);
         throw err;
     }
 };
