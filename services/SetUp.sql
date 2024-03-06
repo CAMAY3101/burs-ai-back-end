@@ -17,7 +17,7 @@ CREATE DATABASE dummy_test
 
 CREATE TABLE usuarios (
     id_usuario SERIAL PRIMARY KEY NOT NULL,
-    correo VARCHAR(255) NOT NULL,
+    correo VARCHAR(255) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     apellidos VARCHAR(255) NOT NULL,
