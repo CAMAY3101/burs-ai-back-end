@@ -1,7 +1,9 @@
 const {db} = require('../services/db.server')
-const dotenv = require('dotenv')
 const { hashPassword } = require('../services/auth.service');
 const twilioService = require('../services/twilio.service');
+
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv')
 dotenv.config()
 
 const usuarioModel = require('../models/usuario.model')
@@ -24,24 +26,31 @@ const usuarioController = {
                 contrasena: req.body.contrasena
             };
             const hashedPassword = await hashPassword(usuario.contrasena);
-            const result = await usuarioModel.createUser(usuario.correo, hashedPassword);
+            const newUserId = await usuarioModel.createUser(usuario.correo, hashedPassword);
+            console.log(newUserId);
+
+            const token = jwt.sign({ id_usuario: newUserId.id_usuario }, 
+                process.env.JWT_SECRET, {
+                expiresIn: "1h"
+            });
+            console.log(token);
             
             res.status(201).json({ 
                 status: 'success',
                 message: 'Usuario creado con éxito',
-                data: {
-                    id_usuario: result.id_usuario
-                }
+                token: token
             });
 
         }catch (error){
+            console.log("Error en createUser de usuario.controller.js");
+            console.log(error);
             if (error.code === '23505' && error.constraint === 'usuarios_correo_key') {
                 const error = new Error('El correo electrónico ya esta registrado');
                 error.statusCode = 400;
                 error.status = 'fail';
                 next(error);
             } else {
-                const serverError = new Error('Error interno del servidor');
+                const serverError = new Error();
                 serverError.statusCode = 500;
                 serverError.status = 'error';
                 next(serverError);
