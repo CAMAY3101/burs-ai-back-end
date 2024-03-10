@@ -1,7 +1,7 @@
 const {db} = require('../services/db.server')
 const dotenv = require('dotenv')
+const { hashPassword } = require('../services/auth.service');
 const twilioService = require('../services/twilio.service');
-const bcrypt = require('bcrypt');
 dotenv.config()
 
 const usuarioModel = require('../models/usuario.model')
@@ -23,9 +23,8 @@ const usuarioController = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
             };
-            hashPassword = await bcrypt.hash(usuario.contrasena, 12);
-
-            const result = await usuarioModel.createUser(usuario.correo, hashPassword);
+            const hashedPassword = await hashPassword(usuario.contrasena);
+            const result = await usuarioModel.createUser(usuario.correo, hashedPassword);
             
             res.status(201).json({ 
                 status: 'success',

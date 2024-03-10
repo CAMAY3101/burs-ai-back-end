@@ -6,8 +6,9 @@ const app = express()
 app.use(cors());
 dotenv.config()
 
-const port = process.env.PORT
+const errorHandler = require('./middlewares/errorHandler');
 
+const port = process.env.PORT
 app.use(express.json())
 
 //Get principal
@@ -26,12 +27,4 @@ app.listen(port, () => {
 });
 
 // middleware para manejar errores
-app.use((err, req, res, next) => {
-    err.statusCode = err.statusCode || 500;
-    err.status = err.status || 'error';
-
-    res.status(err.statusCode).json({
-        status: err.status,
-        message: err.message
-    });
-})
+app.use(errorHandler);
