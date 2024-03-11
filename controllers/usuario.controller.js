@@ -27,18 +27,23 @@ const usuarioController = {
             };
             const hashedPassword = await hashPassword(usuario.contrasena);
             const newUserId = await usuarioModel.createUser(usuario.correo, hashedPassword);
-            console.log(newUserId);
 
             const token = jwt.sign({ id_usuario: newUserId.id_usuario }, 
                 process.env.JWT_SECRET, {
                 expiresIn: "1d"
             });
-            console.log(token);
+
+            // Configurar la cookie con el token
+            res.cookie('token', token, {
+                httpOnly: true,
+                //secure: process.env.NODE_ENV === 'production', // Usar secure en producción
+                sameSite: 'strict',
+                maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
+            });
             
             res.status(201).json({ 
                 status: 'success',
                 message: 'Usuario creado con éxito',
-                token: token
             });
 
         }catch (error){
