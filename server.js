@@ -6,8 +6,9 @@ const app = express()
 app.use(cors());
 dotenv.config()
 
-const port = process.env.PORT
+const errorHandler = require('./middlewares/errorHandler');
 
+const port = process.env.PORT
 app.use(express.json())
 
 //Get principal
@@ -24,3 +25,6 @@ app.use(require('./routes/routes'))
 app.listen(port, () => {
     console.log('Escuchando del puerto ' + port)
 });
+
+// middleware para manejar errores
+app.use(errorHandler);

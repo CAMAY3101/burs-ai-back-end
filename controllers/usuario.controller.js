@@ -1,7 +1,9 @@
 const {db} = require('../services/db.server')
-const dotenv = require('dotenv')
+const { hashPassword } = require('../services/auth.service');
 const twilioService = require('../services/twilio.service');
-const bcrypt = require('bcrypt');
+
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv')
 dotenv.config()
 
 const usuarioModel = require('../models/usuario.model')
@@ -17,103 +19,163 @@ const usuarioController = {
             res.json({error: error});
         }
     }, 
-    createUser: async (req, res) => {
+    createUser: async (req, res, next) => {
         try{
             const usuario = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
             };
-            // Encriptar
-            hashPassword = await bcrypt.hash(usuario.contrasena, 12);
+            const hashedPassword = await hashPassword(usuario.contrasena);
+            const newUserId = await usuarioModel.createUser(usuario.correo, hashedPassword);
+            console.log(newUserId);
+
+            const token = jwt.sign({ id_usuario: newUserId.id_usuario }, 
+                process.env.JWT_SECRET, {
+                expiresIn: "1d"
+            });
+            console.log(token);
             
-            // Crear el usuario en la base de datos
-            const result = await usuarioModel.createUser(usuario.correo, hashPassword);
-            res.json({ 
-                message: 'Usuario creado con éxito', 
-                id_usuario: result.id_usuario
+            res.status(201).json({ 
+                status: 'success',
+                message: 'Usuario creado con éxito',
+                token: token
             });
 
         }catch (error){
-            if (error.code === '23505' && error.constraint === 'unique_correo') {
-                res.status(400).json({ error: 'El correo electrónico ya está registrado' });
+            console.log("Error en createUser de usuario.controller.js");
+            console.log(error);
+            if (error.code === '23505' && error.constraint === 'usuarios_correo_key') {
+                const error = new Error('El correo electrónico ya esta registrado');
+                error.statusCode = 400;
+                error.status = 'fail';
+                next(error);
             } else {
-                console.error(error);
-                res.status(500).json({ error: 'Error interno del servidor' });
+                const serverError = new Error();
+                serverError.statusCode = 500;
+                serverError.status = 'error';
+                next(serverError);
             }
         }
     },
-    updateDataUser: async (req, res) => {
+    updateDataUser: async (req, res, next) => {
         try {
+            const userId = req.user.id_usuario;
             const usuario = {
-                id_usuario: req.body.id_usuario,
                 nombre: req.body.nombre,
                 apellidos: req.body.apellidos,
                 edad: req.body.edad,
                 telefono: req.body.telefono
             };
+            console.log(userId);
 
-            await usuarioModel.updateDataUser(usuario.id_usuario, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
-            const emailModel = await usuarioModel.getEmailUser(usuario.id_usuario);
+            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
+            const emailModel = await usuarioModel.getEmailUser(userId);
 
             await twilioService.sendOTP_Email(emailModel.correo);
-            
-            res.json({ message: 'Datos de usuario actualizados con éxito' });
+
+            res.status(202).json({
+                status: 'success',
+                message: 'Datos de usuario actualizados con éxito',
+            });
+
         } catch (error) {
-            console.error("Error en updateDataUser de usuario.controller.js");
-            console.error(error);
-            res.status(500).json({ error: 'Error interno del servidor' });
+
+            const errorUpdate = new Error();
+            errorUpdate.statusCode = 500;
+            errorUpdate.status = 'error';
+            next(errorUpdate);
         }
     },
 
-
-    verifyEmail: async (req, res) => {
+    verifyEmail: async (req, res, next) => {
         try {
+            const userId = req.user.id_usuario;
             const usuario = {
-                id_usuario: req.body.id_usuario,
                 code: req.body.code
             };
+            console.log("Verify Email")
+            console.log(userId);
 
-            const emailModel = await usuarioModel.getEmailUser(usuario.id_usuario);
-            const phoneModel = await usuarioModel.getPhoneUser(usuario.id_usuario);
+            const emailModel = await usuarioModel.getEmailUser(userId);
+            const phoneModel = await usuarioModel.getPhoneUser(userId);
+
+            console.log(emailModel);
+            console.log(phoneModel);
 
             const verificationCheck = await twilioService.verifyOTP_Email(emailModel.correo, usuario.code);
+            console.log(verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updateEmailVerificationStatus(usuario.id_usuario, true);
+                await usuarioModel.updateEmailVerificationStatus(userId, true);
 
-                res.json({ message: 'Correo electrónico verificado con éxito' });
-                const otpResponse = await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
-            } else {
-                res.status(400).json({ error: 'La verificación del correo electrónico falló' });
+                res.status(200).json({ 
+                    status: 'success',
+                    message: 'Correo verificado con éxito'
+                });
+                await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
+            }
+            if (verificationCheck.valid === false) {
+                const errorCodeEmail = new Error('El código de verificación es incorrecto');
+                errorCodeEmail.statusCode = 400;
+                errorCodeEmail.status = 'fail';
+                next(errorCodeEmail);
             }
         } catch (error) {
-            console.error("Error en verifyEmail de usuario.controller.js");
-            console.error(error);
-            res.status(500).json({ error: 'Error interno del servidor' });
+            console.log(error);
+            if(error.code === 20404){
+                const errorCodeEmail = new Error('Error en Twilio Serice');
+                errorCodeEmail.statusCode = 400;
+                errorCodeEmail.status = 'fail';
+                next(errorCodeEmail);
+            }else{
+                const errorVerifyEmail = new Error();
+                errorVerifyEmail.statusCode = 500;
+                errorVerifyEmail.status = 'error';
+                next(errorVerifyEmail);
+            }
         }
     },
-    verifyPhoneNumber: async (req, res) => {
+    verifyPhoneNumber: async (req, res, next) => {
         try {
+            const userId = req.user.id_usuario;
             const usuario = {
-                id_usuario: req.body.id_usuario,
                 code: req.body.code
             };
+            console.log("Verify Phone")
+            console.log(userId);
 
-            const phoneModel = await usuarioModel.getPhoneUser(usuario.id_usuario);
+            const phoneModel = await usuarioModel.getPhoneUser(userId);
+            console.log(phoneModel);
 
             const verificationCheck = await twilioService.verifyOTP_PhoneNumber(phoneModel.telefono, usuario.code);
+            console.log(verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updatePhoneVerificationStatus(usuario.id_usuario, true);
+                await usuarioModel.updatePhoneVerificationStatus(userId, true);
 
-                res.json({ message: 'Telefono verificado con éxito' });
-            } else {
-                res.status(400).json({ error: 'La verificación del telefono falló' });
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Telefono verificado con éxito'
+                });
+            }
+            if (verificationCheck.valid === false) {
+                const errorCodeEmail = new Error('El código de verificación es incorrecto');
+                errorCodeEmail.statusCode = 400;
+                errorCodeEmail.status = 'fail';
+                next(errorCodeEmail);
             }
         } catch (error) {
-            console.error("Error en verifyPhoneNumber de usuario.controller.js");
-            console.error(error);
-            res.status(500).json({ error: 'Error interno del servidor' });
+            if (error.code === 20404) {
+                const errorCodePhone = new Error('Error en Twilio Serice');
+                errorCodePhone.statusCode = 400;
+                errorCodePhone.status = 'fail';
+                next(errorCodePhone);
+            } else {
+                const errorVerifyPhone = new Error();
+                errorVerifyPhone.statusCode = 500;
+                errorVerifyPhone.status = 'error';
+                next(errorVerifyPhone);
+            }
         }
     },
 };
