@@ -31,7 +31,7 @@ const usuarioController = {
 
             const token = jwt.sign({ id_usuario: newUserId.id_usuario }, 
                 process.env.JWT_SECRET, {
-                expiresIn: "1h"
+                expiresIn: "1d"
             });
             console.log(token);
             
@@ -57,18 +57,19 @@ const usuarioController = {
             }
         }
     },
-    updateDataUser: async (req, res) => {
+    updateDataUser: async (req, res, next) => {
         try {
+            const userId = req.user.id_usuario;
             const usuario = {
-                id_usuario: req.body.id_usuario,
                 nombre: req.body.nombre,
                 apellidos: req.body.apellidos,
                 edad: req.body.edad,
                 telefono: req.body.telefono
             };
+            console.log(userId);
 
-            await usuarioModel.updateDataUser(usuario.id_usuario, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
-            const emailModel = await usuarioModel.getEmailUser(usuario.id_usuario);
+            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
+            const emailModel = await usuarioModel.getEmailUser(userId);
 
             await twilioService.sendOTP_Email(emailModel.correo);
 
@@ -88,28 +89,41 @@ const usuarioController = {
 
     verifyEmail: async (req, res, next) => {
         try {
+            const userId = req.user.id_usuario;
             const usuario = {
-                id_usuario: req.body.id_usuario,
                 code: req.body.code
             };
+            console.log("Verify Email")
+            console.log(userId);
 
-            const emailModel = await usuarioModel.getEmailUser(usuario.id_usuario);
-            const phoneModel = await usuarioModel.getPhoneUser(usuario.id_usuario);
+            const emailModel = await usuarioModel.getEmailUser(userId);
+            const phoneModel = await usuarioModel.getPhoneUser(userId);
+
+            console.log(emailModel);
+            console.log(phoneModel);
 
             const verificationCheck = await twilioService.verifyOTP_Email(emailModel.correo, usuario.code);
+            console.log(verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updateEmailVerificationStatus(usuario.id_usuario, true);
+                await usuarioModel.updateEmailVerificationStatus(userId, true);
 
                 res.status(200).json({ 
                     status: 'success',
                     message: 'Correo verificado con éxito'
                 });
                 await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
-            } 
-        } catch (error) {
-            if(error.code === 20404){
+            }
+            if (verificationCheck.valid === false) {
                 const errorCodeEmail = new Error('El código de verificación es incorrecto');
+                errorCodeEmail.statusCode = 400;
+                errorCodeEmail.status = 'fail';
+                next(errorCodeEmail);
+            }
+        } catch (error) {
+            console.log(error);
+            if(error.code === 20404){
+                const errorCodeEmail = new Error('Error en Twilio Serice');
                 errorCodeEmail.statusCode = 400;
                 errorCodeEmail.status = 'fail';
                 next(errorCodeEmail);
@@ -121,28 +135,38 @@ const usuarioController = {
             }
         }
     },
-    verifyPhoneNumber: async (req, res) => {
+    verifyPhoneNumber: async (req, res, next) => {
         try {
+            const userId = req.user.id_usuario;
             const usuario = {
-                id_usuario: req.body.id_usuario,
                 code: req.body.code
             };
+            console.log("Verify Phone")
+            console.log(userId);
 
-            const phoneModel = await usuarioModel.getPhoneUser(usuario.id_usuario);
+            const phoneModel = await usuarioModel.getPhoneUser(userId);
+            console.log(phoneModel);
 
             const verificationCheck = await twilioService.verifyOTP_PhoneNumber(phoneModel.telefono, usuario.code);
+            console.log(verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updatePhoneVerificationStatus(usuario.id_usuario, true);
+                await usuarioModel.updatePhoneVerificationStatus(userId, true);
 
                 res.status(200).json({
                     status: 'success',
                     message: 'Telefono verificado con éxito'
                 });
             }
+            if (verificationCheck.valid === false) {
+                const errorCodeEmail = new Error('El código de verificación es incorrecto');
+                errorCodeEmail.statusCode = 400;
+                errorCodeEmail.status = 'fail';
+                next(errorCodeEmail);
+            }
         } catch (error) {
             if (error.code === 20404) {
-                const errorCodePhone = new Error('El código de verificación es incorrecto');
+                const errorCodePhone = new Error('Error en Twilio Serice');
                 errorCodePhone.statusCode = 400;
                 errorCodePhone.status = 'fail';
                 next(errorCodePhone);
