@@ -4,6 +4,8 @@ const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv').config();
 const errorHandler = require('./middlewares/errorHandler');
 
+const {db} = require('./services/db.server');
+
 const port = process.env.PORT
 
 const app = express();
@@ -18,8 +20,14 @@ app.use(cors({
 
 //Get principal
 app.get('/', (req, res, next) => {
-    res.send('Pagina Principal Api ')
-    res.json({message: 'Hello World'})
+    try{
+        const result = db.query('SELECT NOW()');
+        res.json({result})
+    }catch (error){
+        console.log("Error en get principal");
+        console.log(error);
+        res.json({error: error});
+    }
 })
 
 

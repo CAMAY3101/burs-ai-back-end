@@ -2,6 +2,7 @@
 
 dummy.js 
 serviceAccountKey.json
+/services/SetUp.sql
 # dependencies
 /node_modules
 /.pnp
