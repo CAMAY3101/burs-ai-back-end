@@ -27,18 +27,23 @@ const usuarioController = {
             };
             const hashedPassword = await hashPassword(usuario.contrasena);
             const newUserId = await usuarioModel.createUser(usuario.correo, hashedPassword);
-            console.log(newUserId);
 
             const token = jwt.sign({ id_usuario: newUserId.id_usuario }, 
                 process.env.JWT_SECRET, {
                 expiresIn: "1d"
             });
-            console.log(token);
+
+            // Configurar la cookie con el token
+            res.cookie('token', token, {
+                httpOnly: true,
+                //secure: process.env.NODE_ENV === 'production', // Usar secure en producción
+                //sameSite: 'strict',
+                maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
+            });
             
             res.status(201).json({ 
                 status: 'success',
                 message: 'Usuario creado con éxito',
-                token: token
             });
 
         }catch (error){
@@ -66,7 +71,6 @@ const usuarioController = {
                 edad: req.body.edad,
                 telefono: req.body.telefono
             };
-            console.log(userId);
 
             await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
             const emailModel = await usuarioModel.getEmailUser(userId);
@@ -84,6 +88,38 @@ const usuarioController = {
             errorUpdate.statusCode = 500;
             errorUpdate.status = 'error';
             next(errorUpdate);
+        }
+    },
+    resendOTPCodeEmail: async (req, res, next) => {
+        try {
+            const userId = req.user.id_usuario;
+            const emailModel = await usuarioModel.getEmailUser(userId);
+            await twilioService.sendOTP_Email(emailModel.correo);
+            res.status(200).json({
+                status: 'success',
+                message: 'Código de verificación reenviado con éxito'
+            });
+        } catch (error) {
+            const errorResendEmail = new Error();
+            errorResendEmail.statusCode = 500;
+            errorResendEmail.status = 'error';
+            next(errorResendEmail);
+        }
+    },
+    resendOTPCodePhoneNumber: async (req, res, next) => {
+        try {
+            const userId = req.user.id_usuario;
+            const phoneModel = await usuarioModel.getPhoneUser(userId);
+            await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
+            res.status(200).json({
+                status: 'success',
+                message: 'Código de verificación reenviado con éxito'
+            });
+        } catch (error) {
+            const errorResendPhone = new Error();
+            errorResendPhone.statusCode = 500;  
+            errorResendPhone.status = 'error';
+            next(errorResendPhone);
         }
     },
 
