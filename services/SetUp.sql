@@ -22,7 +22,7 @@ CREATE TABLE usuarios (
     nombre VARCHAR(255) NOT NULL,
     apellidos VARCHAR(255) NOT NULL,
     edad INT NOT NULL,
-    telefono VARCHAR(20) NOT NULL,
+    telefono VARCHAR(255) NOT NULL,
     correo_verificado BOOLEAN DEFAULT FALSE,
     telefono_verificado BOOLEAN DEFAULT FALSE
 )
@@ -40,6 +40,6 @@ CREATE TABLE historial (
     uso_prestamo VARCHAR(255)
 );
 
-INSERT INTO usuarios (correo, contrasena, nombre, apellidos, edad, telefono) VALUES ('creyesa18@gmail.com', '123456', '', '', 0, '');
+INSERT INTO usuarios (correo, contrasena, nombre, apellidos, edad, telefono) VALUES ('creyesa18@gmail.com', '123456', 'Carlos', 'Reyes', 22, '1234567890');
 ALTER TABLE usuarios
     ADD COLUMN contrasena VARCHAR(255) NOT NULL;
