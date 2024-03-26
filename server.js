@@ -8,15 +8,21 @@ const {db} = require('./services/db.server');
 
 const port = process.env.PORT
 
-const app = express();
+const app = express();1
 
 app.use(cookieParser());
 app.use(express.json());
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
+    origin: ["http://localhost:3000", "https://burs.com.mx"],
+    credentials: true
 }));
+
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "https://burs.com.mx");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
 //Get principal
 app.get('/', (req, res, next) => {

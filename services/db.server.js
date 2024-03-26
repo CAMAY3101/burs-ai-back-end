@@ -7,6 +7,7 @@ const { DB_URL, DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME } = process.
 const pgp = require('pg-promise')();
 
 let db;
+
 const cn = {
     host: DB_HOST,
     port: DB_PORT,
@@ -20,7 +21,6 @@ const cn = {
 
 try {
     db = pgp(cn);
-    //db = pgp(cn);
     //db = pgp('postgres://postgres:m19m31a31@localhost:5432/dummy_test')
     console.log("Conexión a la base de datos establecida con éxito.");
 } catch (e) {

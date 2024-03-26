@@ -36,8 +36,8 @@ const usuarioController = {
             // Configurar la cookie con el token
             res.cookie('token', token, {
                 httpOnly: true,
-                //secure: process.env.NODE_ENV === 'production', // Usar secure en producción
-                //sameSite: 'strict',
+                //secure: true, // secure significa que solo se establecerá en conexiones HTTPS
+                sameSite: 'strict', // sameSite significa que la cookie no se enviará en solicitudes de navegación cruzada
                 maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
             });
             
@@ -71,6 +71,14 @@ const usuarioController = {
                 edad: req.body.edad,
                 telefono: req.body.telefono
             };
+
+            // Si userId esta vacio, enviar error
+            if (!userId) {
+                const errorUserId = new Error('El id del usuario no se ha encontrado');
+                errorUserId.statusCode = 400;
+                errorUserId.status = 'fail';
+                next(errorUserId);
+            }
 
             await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
             const emailModel = await usuarioModel.getEmailUser(userId);
