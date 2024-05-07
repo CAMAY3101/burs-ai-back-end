@@ -1,12 +1,12 @@
-const {db} = require('../services/db.server')
-const { hashPassword } = require('../services/auth.service');
+const { db } = require('../services/db.server')
+const { hashPassword, comparePassword } = require('../services/auth.service');
 const twilioService = require('../services/twilio.service');
 
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv')
 dotenv.config()
 
-const usuarioModel = require('../models/usuario.model')
+const usuarioModel = require('../models/usuario.model');
 
 const usuarioController = {
     getUsuarios: async (req, res) => {
@@ -16,19 +16,26 @@ const usuarioController = {
         } catch (error) {
             console.log("Error en getUsuarios de usuario.controller.js");
             console.log(error);
-            res.json({error: error});
+            res.json({ error: error });
         }
-    }, 
-    createUser: async (req, res, next) => {
-        try{
+    },
+    login: async (req, res, next) => {
+        try {
             const usuario = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
             };
-            const hashedPassword = await hashPassword(usuario.contrasena);
-            const newUserId = await usuarioModel.createUser(usuario.correo, hashedPassword);
+            const userDB = await usuarioModel.login(usuario.correo);
+            const unhashedPassword = await comparePassword(usuario.contrasena, userDB.contrasena);
 
-            const token = jwt.sign({ id_usuario: newUserId.id_usuario }, 
+            if (!userDB || !unhashedPassword) {
+                const error = new Error('Correo o contraseña incorrectos');
+                error.statusCode = 401;
+                error.status = 'fail';
+                next(error);
+            }
+
+            const token = jwt.sign({ id_usuario: userDB.id_usuario },
                 process.env.JWT_SECRET, {
                 expiresIn: "1d"
             });
@@ -36,17 +43,52 @@ const usuarioController = {
             // Configurar la cookie con el token
             res.cookie('token', token, {
                 httpOnly: true,
-                //secure: true, // secure significa que solo se establecerá en conexiones HTTPS
-                sameSite: 'strict', // sameSite significa que la cookie no se enviará en solicitudes de navegación cruzada
+                secure: true, // asegúrate de que estás en una conexión HTTPS
+                sameSite: 'none',
                 maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
             });
-            
-            res.status(201).json({ 
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Inicio de sesión exitoso',
+                progress: userDB.verificacion_step
+            });
+
+        } catch (error) {
+            const serverError = new Error();
+            serverError.statusCode = 500;
+            serverError.status = 'error';
+            next(serverError);
+        }
+    },
+    createUser: async (req, res, next) => {
+        try {
+            const usuario = {
+                correo: req.body.correo,
+                contrasena: req.body.contrasena
+            };
+            const hashedPassword = await hashPassword(usuario.contrasena);
+            const newUserId = await usuarioModel.createUser(usuario.correo, hashedPassword, 'ingresar datos');
+
+            const token = jwt.sign({ id_usuario: newUserId.id_usuario },
+                process.env.JWT_SECRET, {
+                expiresIn: "1d"
+            });
+
+            // Configurar la cookie con el token
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: true, // asegúrate de que estás en una conexión HTTPS
+                sameSite: 'none',
+                maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
+            });
+
+            res.status(201).json({
                 status: 'success',
                 message: 'Usuario creado con éxito',
             });
 
-        }catch (error){
+        } catch (error) {
             console.log("Error en createUser de usuario.controller.js");
             console.log(error);
             if (error.code === '23505' && error.constraint === 'usuarios_correo_key') {
@@ -80,7 +122,7 @@ const usuarioController = {
                 next(errorUserId);
             }
 
-            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono);
+            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono, 'verificar correo');
             const emailModel = await usuarioModel.getEmailUser(userId);
 
             await twilioService.sendOTP_Email(emailModel.correo);
@@ -100,6 +142,7 @@ const usuarioController = {
     },
     resendOTPCodeEmail: async (req, res, next) => {
         try {
+            console.log('Resend Email otp')
             const userId = req.user.id_usuario;
             const emailModel = await usuarioModel.getEmailUser(userId);
             await twilioService.sendOTP_Email(emailModel.correo);
@@ -125,7 +168,7 @@ const usuarioController = {
             });
         } catch (error) {
             const errorResendPhone = new Error();
-            errorResendPhone.statusCode = 500;  
+            errorResendPhone.statusCode = 500;
             errorResendPhone.status = 'error';
             next(errorResendPhone);
         }
@@ -150,9 +193,9 @@ const usuarioController = {
             console.log(verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updateEmailVerificationStatus(userId, true);
+                await usuarioModel.updateEmailVerificationStatus(userId, true, 'verificar telefono');
 
-                res.status(200).json({ 
+                res.status(200).json({
                     status: 'success',
                     message: 'Correo verificado con éxito'
                 });
@@ -166,12 +209,12 @@ const usuarioController = {
             }
         } catch (error) {
             console.log(error);
-            if(error.code === 20404){
+            if (error.code === 20404) {
                 const errorCodeEmail = new Error('Error en Twilio Serice');
                 errorCodeEmail.statusCode = 400;
                 errorCodeEmail.status = 'fail';
                 next(errorCodeEmail);
-            }else{
+            } else {
                 const errorVerifyEmail = new Error();
                 errorVerifyEmail.statusCode = 500;
                 errorVerifyEmail.status = 'error';
@@ -195,7 +238,7 @@ const usuarioController = {
             console.log(verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updatePhoneVerificationStatus(userId, true);
+                await usuarioModel.updatePhoneVerificationStatus(userId, true, 'ingresar historial');
 
                 res.status(200).json({
                     status: 'success',
@@ -222,5 +265,22 @@ const usuarioController = {
             }
         }
     },
+    getVerificacionStepStatus: async (req, res, next) => {
+        try {
+            const userId = req.user.id_usuario;
+            const result = await usuarioModel.getVerificacionStepStatus(userId);
+            res.status(200).json(
+                {
+                    status: 'success',
+                    verificatioStep: result
+                }
+            );
+        } catch (error) {
+            const errorGetStep = new Error();
+            errorGetStep.statusCode = 500;
+            errorGetStep.status = 'error';
+            next(errorGetStep);
+        }
+    }
 };
 module.exports = usuarioController;
