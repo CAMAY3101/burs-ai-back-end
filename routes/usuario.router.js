@@ -7,6 +7,7 @@ const usuarioController = require('../controllers/usuario.controller');
 usuarioRouter.get('/getUsuarios', usuarioController.getUsuarios);
 usuarioRouter.post('/login', usuarioController.login);
 usuarioRouter.post('/createUser', usuarioController.createUser);
+usuarioRouter.post('/logout', usuarioController.logout);
 
 usuarioRouter.post('/updateDataUser', authenticateJWT, usuarioController.updateDataUser);
 usuarioRouter.post('/resendOTPCodeEmail', authenticateJWT, usuarioController.resendOTPCodeEmail);

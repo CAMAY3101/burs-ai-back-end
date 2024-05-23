@@ -104,6 +104,28 @@ const usuarioController = {
             }
         }
     },
+    logout: async (req, res, next) => {
+        try {
+            // Eliminar la cookie
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: true, // asegúrate de que estás en una conexión HTTPS
+                sameSite: 'none'
+            });
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Cierre de sesión exitoso'
+            });
+        } catch (error) {
+            console.log("Error en logout de usuario.controller.js");
+            console.log(error);
+            const serverError = new Error();
+            serverError.statusCode = 500;
+            serverError.status = 'error';
+            next(serverError);
+        }
+    },
     updateDataUser: async (req, res, next) => {
         try {
             const userId = req.user.id_usuario;
