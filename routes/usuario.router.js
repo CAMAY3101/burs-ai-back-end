@@ -15,5 +15,7 @@ usuarioRouter.post('/resendOTPCodePhoneNumber', authenticateJWT, usuarioControll
 usuarioRouter.post('/verifyEmail', authenticateJWT, usuarioController.verifyEmail);
 usuarioRouter.post('/verifyPhoneNumber', authenticateJWT, usuarioController.verifyPhoneNumber);
 usuarioRouter.get('/getVerificacionStepStatus', authenticateJWT, usuarioController.getVerificacionStepStatus);
+usuarioRouter.get('/getSecureEmailUser', authenticateJWT, usuarioController.getSecureEmailUser);
+usuarioRouter.get('/getSecurePhoneUser', authenticateJWT, usuarioController.getSecurePhoneUser);
 
 module.exports = usuarioRouter; 

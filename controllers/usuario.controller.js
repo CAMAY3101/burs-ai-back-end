@@ -303,6 +303,45 @@ const usuarioController = {
             errorGetStep.status = 'error';
             next(errorGetStep);
         }
+    },
+    getSecureEmailUser: async (req, res, next) => {
+        try {
+            const userId = req.user.id_usuario;
+            const result = await usuarioModel.getEmailUser(userId);
+            // add *** to email
+            const email = result.correo.split('@');
+            const emailSecure = email[0].slice(0, 3) + '***@' + email[1];
+            res.status(200).json(
+                {
+                    status: 'success',
+                    email: emailSecure
+                }
+            );
+        } catch (error) {
+            const errorGetEmail = new Error();
+            errorGetEmail.statusCode = 500;
+            errorGetEmail.status = 'error';
+            next(errorGetEmail);
+        }
+    },
+    getSecurePhoneUser: async (req, res, next) => {
+        try {
+            const userId = req.user.id_usuario;
+            const result = await usuarioModel.getPhoneUser(userId);
+            // add *** to phone
+            const phoneSecure = result.telefono.slice(3, 5) + '***' + result.telefono.slice(-3);
+            res.status(200).json(
+                {
+                    status: 'success',
+                    phone: phoneSecure
+                }
+            );
+        } catch (error) {
+            const errorGetPhone = new Error();
+            errorGetPhone.statusCode = 500;
+            errorGetPhone.status = 'error';
+            next(errorGetPhone);
+        }
     }
 };
 module.exports = usuarioController;
