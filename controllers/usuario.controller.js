@@ -25,14 +25,17 @@ const usuarioController = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
             };
+            console.log('Inicio de sesion');
+            console.log(usuario.correo);
+            console.log(usuario.contrasena);
             const userDB = await usuarioModel.login(usuario.correo);
             const unhashedPassword = await comparePassword(usuario.contrasena, userDB.contrasena);
-
             if (!userDB || !unhashedPassword) {
+                console.log('Error en correo o contrasena incorrecto')
                 const error = new Error('Correo o contraseña incorrectos');
                 error.statusCode = 401;
                 error.status = 'fail';
-                next(error);
+                return next(error);
             }
 
             const token = jwt.sign({ id_usuario: userDB.id_usuario },
@@ -55,10 +58,12 @@ const usuarioController = {
             });
 
         } catch (error) {
+            console.log("Error en login de usuario.controller.js");
+            console.log(error);
             const serverError = new Error();
             serverError.statusCode = 500;
             serverError.status = 'error';
-            next(serverError);
+            return next(serverError);
         }
     },
     createUser: async (req, res, next) => {
@@ -104,6 +109,28 @@ const usuarioController = {
             }
         }
     },
+    logout: async (req, res, next) => {
+        try {
+            // Eliminar la cookie
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: true, // asegúrate de que estás en una conexión HTTPS
+                sameSite: 'none'
+            });
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Cierre de sesión exitoso'
+            });
+        } catch (error) {
+            console.log("Error en logout de usuario.controller.js");
+            console.log(error);
+            const serverError = new Error();
+            serverError.statusCode = 500;
+            serverError.status = 'error';
+            next(serverError);
+        }
+    },
     updateDataUser: async (req, res, next) => {
         try {
             const userId = req.user.id_usuario;
@@ -122,7 +149,7 @@ const usuarioController = {
                 next(errorUserId);
             }
 
-            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono, 'verificar correo');
+            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono, 'ingresar historial');
             const emailModel = await usuarioModel.getEmailUser(userId);
 
             await twilioService.sendOTP_Email(emailModel.correo);
@@ -238,7 +265,7 @@ const usuarioController = {
             console.log(verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updatePhoneVerificationStatus(userId, true, 'ingresar historial');
+                await usuarioModel.updatePhoneVerificationStatus(userId, true, 'verificar identidad');
 
                 res.status(200).json({
                     status: 'success',
@@ -280,6 +307,45 @@ const usuarioController = {
             errorGetStep.statusCode = 500;
             errorGetStep.status = 'error';
             next(errorGetStep);
+        }
+    },
+    getSecureEmailUser: async (req, res, next) => {
+        try {
+            const userId = req.user.id_usuario;
+            const result = await usuarioModel.getEmailUser(userId);
+            // add *** to email
+            const email = result.correo.split('@');
+            const emailSecure = email[0].slice(0, 3) + '***@' + email[1];
+            res.status(200).json(
+                {
+                    status: 'success',
+                    email: emailSecure
+                }
+            );
+        } catch (error) {
+            const errorGetEmail = new Error();
+            errorGetEmail.statusCode = 500;
+            errorGetEmail.status = 'error';
+            next(errorGetEmail);
+        }
+    },
+    getSecurePhoneUser: async (req, res, next) => {
+        try {
+            const userId = req.user.id_usuario;
+            const result = await usuarioModel.getPhoneUser(userId);
+            // add *** to phone
+            const phoneSecure = result.telefono.slice(3, 5) + '***' + result.telefono.slice(-3);
+            res.status(200).json(
+                {
+                    status: 'success',
+                    phone: phoneSecure
+                }
+            );
+        } catch (error) {
+            const errorGetPhone = new Error();
+            errorGetPhone.statusCode = 500;
+            errorGetPhone.status = 'error';
+            next(errorGetPhone);
         }
     }
 };
