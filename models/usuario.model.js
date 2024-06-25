@@ -30,7 +30,7 @@ const usuarioModel = {
         return await db.none('UPDATE usuarios SET telefono_verificado = $1, verificacion_step = $2 WHERE id_usuario = $3', [status, step, userId]);
     },
     updateVerificacionStepStatus: async (userId, step) => {
-        return await db.none('UPDATE usuarios SET verificacion_paso = $1 WHERE id_usuario = $2', [step, userId]);
+        return await db.none('UPDATE usuarios SET verificacion_step = $1 WHERE id_usuario = $2', [step, userId]);
     },
     getVerificacionStepStatus: async (userId) => {
         return await db.one('SELECT verificacion_paso FROM usuarios WHERE id_usuario = $1', [userId]);

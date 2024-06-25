@@ -25,14 +25,17 @@ const usuarioController = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
             };
+            console.log('Inicio de sesion');
+            console.log(usuario.correo);
+            console.log(usuario.contrasena);
             const userDB = await usuarioModel.login(usuario.correo);
             const unhashedPassword = await comparePassword(usuario.contrasena, userDB.contrasena);
-
             if (!userDB || !unhashedPassword) {
+                console.log('Error en correo o contrasena incorrecto')
                 const error = new Error('Correo o contraseña incorrectos');
                 error.statusCode = 401;
                 error.status = 'fail';
-                next(error);
+                return next(error);
             }
 
             const token = jwt.sign({ id_usuario: userDB.id_usuario },
@@ -55,10 +58,12 @@ const usuarioController = {
             });
 
         } catch (error) {
+            console.log("Error en login de usuario.controller.js");
+            console.log(error);
             const serverError = new Error();
             serverError.statusCode = 500;
             serverError.status = 'error';
-            next(serverError);
+            return next(serverError);
         }
     },
     createUser: async (req, res, next) => {
@@ -144,7 +149,7 @@ const usuarioController = {
                 next(errorUserId);
             }
 
-            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono, 'verificar correo');
+            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono, 'ingresar historial');
             const emailModel = await usuarioModel.getEmailUser(userId);
 
             await twilioService.sendOTP_Email(emailModel.correo);
@@ -260,7 +265,7 @@ const usuarioController = {
             console.log(verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updatePhoneVerificationStatus(userId, true, 'ingresar historial');
+                await usuarioModel.updatePhoneVerificationStatus(userId, true, 'verificar identidad');
 
                 res.status(200).json({
                     status: 'success',
