@@ -1,6 +1,5 @@
 const twilioService = require('../services/twilio.service');
 const usuarioModel = require('../models/usuario.model');
-const twilioService = require('../services/twilio.service');
 
 const verificacionModel = require('../models/verificacion.model');
 
@@ -21,6 +20,7 @@ const verificacionController = {
             const errorSendEmail = new Error();
             errorSendEmail.statusCode = 500;
             errorSendEmail.status = 'error';
+            console.log(error);
             next(errorSendEmail);
         }
 
@@ -89,7 +89,7 @@ const verificacionController = {
             const verificationCheck = await twilioService.verifyOTP_Email(emailModel.correo, usuario.code);
 
             if (verificationCheck.status === 'approved') {
-                await verificacionModel.updateEmailVerificationStatus(userId, true, 'verificar telefono');
+                await usuarioModel.updateVerificacionStepStatus(userId, 'verificar telefono');
 
                 res.status(200).json({
                     status: 'success',
@@ -156,21 +156,6 @@ const verificacionController = {
             }
         }
     },
-    getVerificacionStepStatus: async (req, res, next) => {
-        try {
-            const userId = req.user.id_usuario;
-            const result = await usuarioModel.getVerificacionStepStatus(userId);
-            res.status(200).json(
-                {
-                    status: 'success',
-                    verificatioStep: result
-                }
-            );
-        } catch (error) {
-            const errorGetStep = new Error();
-            errorGetStep.statusCode = 500;
-            errorGetStep.status = 'error';
-            next(errorGetStep);
-        }
-    },
 }
+
+module.exports = verificacionController;

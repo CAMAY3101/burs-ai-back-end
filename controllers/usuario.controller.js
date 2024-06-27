@@ -46,7 +46,7 @@ const usuarioController = {
             // Configurar la cookie con el token
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: true, // asegúrate de que estás en una conexión HTTPS
+                secure: false, // asegúrate de que estás en una conexión HTTPS
                 sameSite: 'none',
                 maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
             });
@@ -202,6 +202,24 @@ const usuarioController = {
             errorGetPhone.status = 'error';
             next(errorGetPhone);
         }
-    }
+    },
+
+    getVerificacionStepStatus: async (req, res, next) => {
+        try {
+            const userId = req.user.id_usuario;
+            const result = await usuarioModel.getVerificacionStepStatus(userId);
+            res.status(200).json(
+                {
+                    status: 'success',
+                    verificatioStep: result
+                }
+            );
+        } catch (error) {
+            const errorGetStep = new Error();
+            errorGetStep.statusCode = 500;
+            errorGetStep.status = 'error';
+            next(errorGetStep);
+        }
+    },
 };
 module.exports = usuarioController;
