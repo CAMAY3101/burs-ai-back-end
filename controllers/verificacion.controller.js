@@ -129,7 +129,7 @@ const verificacionController = {
             const verificationCheck = await twilioService.verifyOTP_PhoneNumber(phoneModel.telefono, usuario.code);
 
             if (verificationCheck.status === 'approved') {
-                await verificacionModel.updatePhoneVerificationStatus(userId, true, 'verificar identidad');
+                await usuarioModel.updatePhoneVerificationStatus(userId, 'verificar identidad');
 
                 res.status(200).json({
                     status: 'success',
