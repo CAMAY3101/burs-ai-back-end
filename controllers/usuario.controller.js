@@ -46,7 +46,7 @@ const usuarioController = {
             // Configurar la cookie con el token
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: false, // asegúrate de que estás en una conexión HTTPS
+                secure: true, // asegúrate de que estás en una conexión HTTPS
                 sameSite: 'none',
                 maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
             });
@@ -54,7 +54,7 @@ const usuarioController = {
             res.status(200).json({
                 status: 'success',
                 message: 'Inicio de sesión exitoso',
-                progress: userDB.verificacion_step
+                progress: userDB.etapa_registro
             });
 
         } catch (error) {
@@ -83,7 +83,7 @@ const usuarioController = {
             // Configurar la cookie con el token
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: false, // asegúrate de que estás en una conexión HTTPS
+                secure: true, // asegúrate de que estás en una conexión HTTPS
                 sameSite: 'none',
                 maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
             });

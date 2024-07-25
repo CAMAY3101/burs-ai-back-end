@@ -9,6 +9,8 @@ verificacionRouter.post('/sendOTPCodePhoneNumber', authenticateJWT, verificacion
 verificacionRouter.post('/resendOTPCodeEmail', authenticateJWT, verificacionController.resendOTPCodeEmail);
 verificacionRouter.post('/resendOTPCodePhoneNumber', authenticateJWT, verificacionController.resendOTPCodePhoneNumber);
 verificacionRouter.post('/verifyEmail', authenticateJWT, verificacionController.verifyEmail);
-verificacionRouter.post('/verifyPhoneNumber', authenticateJWT, verificacionController.verifyPhoneNumber); 
+verificacionRouter.post('/verifyPhoneNumber', authenticateJWT, verificacionController.verifyPhoneNumber);
+verificacionRouter.post('/verifyIdentity', authenticateJWT, verificacionController.verifyIdentity);
+verificacionRouter.post('/verifyID', authenticateJWT, verificacionController.verifyID);
 
 module.exports = verificacionRouter;

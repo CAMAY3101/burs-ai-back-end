@@ -65,7 +65,8 @@ const verificacionController = {
         try {
             const userId = req.user.id_usuario;
             const phoneModel = await usuarioModel.getPhoneUser(userId);
-            await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
+            const responseTwilio = await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
+            console.log(responseTwilio);
             res.status(200).json({
                 status: 'success',
                 message: 'Código de verificación reenviado con éxito'
@@ -90,6 +91,7 @@ const verificacionController = {
 
             if (verificationCheck.status === 'approved') {
                 await usuarioModel.updateVerificacionStepStatus(userId, 'verificar telefono');
+                await verificacionModel.updateEmailVerificationStatus(userId, true);
 
                 res.status(200).json({
                     status: 'success',
@@ -124,12 +126,18 @@ const verificacionController = {
                 code: req.body.code
             };
 
+            console.log('Code phone', usuario.code);
+
             const phoneModel = await usuarioModel.getPhoneUser(userId);
+            console.log('Phone model', phoneModel);
 
             const verificationCheck = await twilioService.verifyOTP_PhoneNumber(phoneModel.telefono, usuario.code);
+            console.log('Verification check', verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updatePhoneVerificationStatus(userId, 'verificar identidad');
+                await usuarioModel.updateVerificacionStepStatus(userId, 'verificar identidad');
+                await verificacionModel.updateEmailVerificationStatus(userId, true);
+
 
                 res.status(200).json({
                     status: 'success',
@@ -143,6 +151,7 @@ const verificacionController = {
                 next(errorCodeEmail);
             }
         } catch (error) {
+            console.log(error)
             if (error.code === 20404) {
                 const errorCodePhone = new Error('Error en Twilio Serice');
                 errorCodePhone.statusCode = 400;
@@ -156,6 +165,40 @@ const verificacionController = {
             }
         }
     },
+    verifyIdentity: async (req, res, next) => {
+        try{
+            const userId = req.user.id_usuario;
+            await verificacionModel.updateIdentityVerificationStatus(userId, true);
+            await usuarioModel.updateVerificacionStepStatus(userId, 'verificar id');
+            res.status(200).json({
+                status: 'success',
+                message: 'Identidad verificada con éxito'
+            });
+        }catch(error){
+            console.log(error);
+            const errorVerifyIdentity = new Error();
+            errorVerifyIdentity.statusCode = 500;
+            errorVerifyIdentity.status = 'error';
+            next(errorVerifyIdentity);
+        }
+    },
+    verifyID: async (req, res, next) => {
+        try{
+            const userId = req.user.id_usuario;
+            await verificacionModel.updateIDVerificationStatus(userId, true);
+            await usuarioModel.updateVerificacionStepStatus(userId, 'simulacion modelos');
+            res.status(200).json({
+                status: 'success',
+                message: 'Identificación verificada con éxito'
+            });
+        }catch(error){
+            console.log(error);
+            const errorVerifyID = new Error();
+            errorVerifyID.statusCode = 500;
+            errorVerifyID.status = 'error';
+            next(errorVerifyID);
+        }
+    }
 }
 
 module.exports = verificacionController;
