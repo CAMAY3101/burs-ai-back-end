@@ -1,23 +1,42 @@
 // make a function that calculates the free incomes of a person using the formula incomes less expenses
 
-export const CapacidadDePagoTotalF = (incomes, expenses) => {
+const CapacidadDePagoTotalF = (incomes, expenses) => {
     return incomes - expenses;
     }   
 
-export const CapacidadDePagoDiario = (incomes, expenses, plazoDeDias) => {
+const CapacidadDePagoDiario = (incomes, expenses, plazoDeDias) => {
+    console.log('CapacidadDePagoDiario');
+    console.log('incomes', incomes);
     const CapacidadDePagoTotal = incomes - expenses;
     return CapacidadDePagoTotal/plazoDeDias;
 }
 
-export const CalculoDeDiasDeCredito = (CapacidadDePagoDiario) => {
+const CalculoDeDiasDeCredito = (CapacidadDePagoDiario) => {
     FactorDeMultiplicacionDiario = 1 + (0.0124 * 99);
 
     TotalPagar = CapacidadDePagoDiario * 99;
 
     MontoMaximoDePrestamo = TotalPagar / FactorDeMultiplicacionDiario;
+
+    return MontoMaximoDePrestamo;
 }
 
-export function calcularPuntuacionCapacidadPago(datosCliente) {
+const ParametroDiasDePago = (CapacidadDePagoDiario, montoSolicitado) => {
+    const interesDiario = montoSolicitado * 0.0124;
+    const pagoDiarioTotal = montoSolicitado + (1 + 0.0124);
+    const numeroDeDias = pagoDiarioTotal / 300;
+    const pagoDiario = pagoDiarioTotal / numeroDeDias;
+    const res = {
+        interesDiario: interesDiario,
+        pagoDiarioTotal: pagoDiarioTotal,
+        numeroDeDias: numeroDeDias,
+        pagoDiario: pagoDiario
+    }
+
+    return res;
+}
+
+function calcularPuntuacionCapacidadPago(datosCliente) {
     let puntuacion = 0;
 
     // Puntuación por ingresos mensuales netos
@@ -48,7 +67,7 @@ export function calcularPuntuacionCapacidadPago(datosCliente) {
     return puntuacion;
 }
 
-export const calcularDiasDePago = (capacidadPagoDiaria, montoSolicitado, tasaInteresDiaria) => {
+const calcularDiasDePago = (capacidadPagoDiaria, montoSolicitado, tasaInteresDiaria) => {
     // Calcular el monto total a pagar (capital + intereses)
     const montoTotal = montoSolicitado * ( 1 + tasaInteresDiaria)
 
@@ -61,4 +80,13 @@ export const calcularDiasDePago = (capacidadPagoDiaria, montoSolicitado, tasaInt
     }
 
     return diasDePago;
-};
+}
+
+module.exports = {
+    CapacidadDePagoTotalF,
+    CapacidadDePagoDiario,
+    ParametroDiasDePago,
+    CalculoDeDiasDeCredito,
+    calcularPuntuacionCapacidadPago,
+    calcularDiasDePago
+}

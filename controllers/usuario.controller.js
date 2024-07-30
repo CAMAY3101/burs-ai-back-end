@@ -46,7 +46,7 @@ const usuarioController = {
             // Configurar la cookie con el token
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: true, // asegúrate de que estás en una conexión HTTPS
+                secure: false, // asegúrate de que estás en una conexión HTTPS
                 sameSite: 'none',
                 maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
             });
