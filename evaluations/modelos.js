@@ -5,20 +5,28 @@ const CapacidadDePagoTotalF = (incomes, expenses) => {
     }   
 
 const CapacidadDePagoDiario = (incomes, expenses, plazoDeDias) => {
-    console.log('CapacidadDePagoDiario');
-    console.log('incomes', incomes);
     const CapacidadDePagoTotal = incomes - expenses;
-    return CapacidadDePagoTotal/plazoDeDias;
+    const res = {
+        CapacidadDePagoTotal: CapacidadDePagoTotal,
+        CapacidadDePagoDiario: CapacidadDePagoTotal / plazoDeDias
+    };
+    return res;
 }
 
 const CalculoDeDiasDeCredito = (CapacidadDePagoDiario) => {
-    FactorDeMultiplicacionDiario = 1 + (0.0124 * 99);
+    const FactorDeMultiplicacionDiario = 1 + (0.0124 * 99);
 
-    TotalPagar = CapacidadDePagoDiario * 99;
+    const TotalPagar = CapacidadDePagoDiario * 99;
 
-    MontoMaximoDePrestamo = TotalPagar / FactorDeMultiplicacionDiario;
+    const MontoMaximoDePrestamo = TotalPagar / FactorDeMultiplicacionDiario;
 
-    return MontoMaximoDePrestamo;
+    const res = {
+        FactorDeMultiplicacionDiario: FactorDeMultiplicacionDiario,
+        TotalPagar: TotalPagar,
+        MontoMaximoDePrestamo: MontoMaximoDePrestamo
+    };
+
+    return res;
 }
 
 const ParametroDiasDePago = (CapacidadDePagoDiario, montoSolicitado) => {
@@ -36,35 +44,58 @@ const ParametroDiasDePago = (CapacidadDePagoDiario, montoSolicitado) => {
     return res;
 }
 
-function calcularPuntuacionCapacidadPago(datosCliente) {
+function calcularPuntuacionCapacidadPago(ingresos, egresos) {
     let puntuacion = 0;
+    let puntajeIngresos = 0;
+    let puntajeEgresos = 0;
+    let puntajeRelacionDeudaIngreso = 0;
 
     // Puntuación por ingresos mensuales netos
-    if (datosCliente.ingresosMensualesNetos < 5000) {
+    if (ingresos < 5000) {
         puntuacion += 0;
-    } else if (datosCliente.ingresosMensualesNetos <= 10000) {
+        puntajeIngresos = 0;
+    } else if (ingresos <= 10000) {
         puntuacion += 3;
+        puntajeIngresos = 3;
     } else {
         puntuacion += 5;
+        puntajeIngresos = 5;
     }
 
     // Puntuación por egresos mensuales
-    const porcentajeEgresos = (datosCliente.egresosMensuales / datosCliente.ingresosMensualesNetos) * 100;
+    const porcentajeEgresos = (egresos / ingresos) * 100;
     if (porcentajeEgresos > 50) {
         puntuacion -= 3;
+        puntajeEgresos = 3;
     } else if (porcentajeEgresos > 30) {
         puntuacion -= 1;
+        puntajeEgresos = 1;
     }
+
+    const deuda = ingresos - egresos;
 
     // Puntuación por relación deuda-ingreso
-    const porcentajeDeudaIngreso = (datosCliente.deuda / datosCliente.ingresosMensualesNetos) * 100;
+    const porcentajeDeudaIngreso = (deuda / ingresos) * 100;
     if (porcentajeDeudaIngreso > 40) {
         puntuacion -= 5;
+        puntajeRelacionDeudaIngreso = 5;
     } else if (porcentajeDeudaIngreso > 20) {
         puntuacion -= 2;
+        puntajeRelacionDeudaIngreso = 2;
     }
 
-    return puntuacion;
+    res = {
+        puntuacion: puntuacion,
+        deuda: deuda,
+        porcentajeEgresos: porcentajeEgresos,
+        porcentajeDeudaIngreso: porcentajeDeudaIngreso,
+        puntajeEgresos: puntajeEgresos,
+        puntajeIngresos: puntajeIngresos,
+        puntajeRelacionDeudaIngreso: puntajeRelacionDeudaIngreso
+    }
+    console.log(deuda);
+
+    return res;
 }
 
 const calcularDiasDePago = (capacidadPagoDiaria, montoSolicitado, tasaInteresDiaria) => {

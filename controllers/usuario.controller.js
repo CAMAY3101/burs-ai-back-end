@@ -25,9 +25,8 @@ const usuarioController = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
             };
-            console.log('Inicio de sesion');
+            console.log("login");
             console.log(usuario.correo);
-            console.log(usuario.contrasena);
             const userDB = await usuarioModel.login(usuario.correo);
             const unhashedPassword = await comparePassword(usuario.contrasena, userDB.contrasena);
             if (!userDB || !unhashedPassword) {
@@ -45,9 +44,9 @@ const usuarioController = {
 
             // Configurar la cookie con el token
             res.cookie('token', token, {
-                httpOnly: true,
-                secure: false, // asegúrate de que estás en una conexión HTTPS
-                sameSite: 'none',
+                httpOnly: false,
+                secure: true, // Solo en producción
+                sameSite: 'None',
                 maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
             });
 
@@ -83,8 +82,8 @@ const usuarioController = {
             // Configurar la cookie con el token
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: true, // asegúrate de que estás en una conexión HTTPS
-                sameSite: 'none',
+                secure: process.env.NODE_ENV === 'production', // Solo en producción
+                sameSite: 'None',
                 maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
             });
 

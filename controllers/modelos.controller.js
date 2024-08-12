@@ -6,35 +6,39 @@ const modelosController = {
         try{
             const id_usuario = req.user.id_usuario;
             const parameters = {
-                egresos: req.body.egresos,
-                montoSolicitado: req.body.montoSolicitado,
+                expenses: req.query.expenses, // Para GET
+                monto_solicitado: req.query.monto_solicitado,
             };
+            console.log('body:', req.body);
             const valores_fijos = {
                 plazoMaxDias: 99, 
                 tazaInteres: 0.0124,
             }
-            console.log('getAllValuesModels');
-            console.log('id_usuario', id_usuario);
-            console.log('parameters', parameters);
 
             const ingresosD = await historialModel.getSalarioMensual(id_usuario);
             const ingresos = ingresosD.salario_mensual;
-            console.log('ingresos controller', ingresosD);
 
-            const CapacidadPagoDiario = CalculosModelos.CapacidadDePagoDiario(ingresos, parameters.egresos, valores_fijos.plazoMaxDias);
-            const CapacidadDeDiasDeCredito = CalculosModelos.CalculoDeDiasDeCredito(CapacidadPagoDiario);
-            const ParametroDiasDePago = CalculosModelos.ParametroDiasDePago(CapacidadPagoDiario, parameters.montoSolicitado);
-            console.log('ParametroDiasDePago', ParametroDiasDePago);
+            const CapacidadPagoDiario = CalculosModelos.CapacidadDePagoDiario(ingresos, parameters.expenses, valores_fijos.plazoMaxDias);
+            const CapacidadDeDiasDeCredito = CalculosModelos.CalculoDeDiasDeCredito(CapacidadPagoDiario.CapacidadDePagoDiario);
+            const ParametroDiasDePago = CalculosModelos.ParametroDiasDePago(CapacidadPagoDiario, parameters.monto_solicitado);
+            const calculoCapacidadPago = CalculosModelos.calcularPuntuacionCapacidadPago(ingresos, parameters.expenses);
+            
 
             res.status(200).json({
                 status: 'success',
-                CapacidadPagoDiario: CapacidadPagoDiario,
-                CapacidadDeDiasDeCredito: CapacidadDeDiasDeCredito,
-                ParametroDiasDePago: ParametroDiasDePago,
-
+                results: {
+                    ingresos: ingresos,
+                    plazoMaxDias: valores_fijos.plazoMaxDias,
+                    tazaInteres: valores_fijos.tazaInteres,
+                    CapacidadPagoDiario: CapacidadPagoDiario,
+                    CapacidadDeDiasDeCredito: CapacidadDeDiasDeCredito,
+                    ParametroDiasDePago: ParametroDiasDePago,
+                    calculoCapacidadPago: calculoCapacidadPago
+                }
             });
 
-        } catch {
+        } catch(error) {
+            console.log('Error en modelosController.getAllValuesModels:', error);
             const errorGetAllValuesModels = new Error();
             errorGetAllValuesModels.statusCode = 500;
             errorGetAllValuesModels.status = 'error';
