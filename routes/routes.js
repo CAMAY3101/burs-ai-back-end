@@ -3,6 +3,9 @@ const router = express.Router()
 
 router.use('/usuarios', require('./usuario.router'))
 router.use('/historial', require('./historial.router'))
+router.use('/verificacion', require('./verificacion.router'))
+router.use('/direccion', require('./direccion.router'))
+router.use('/modelos', require('./modelos.router'))
 
 router.get('/check-cookie', (req, res) => {
     try {

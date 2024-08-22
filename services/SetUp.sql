@@ -23,9 +23,29 @@ CREATE TABLE usuarios (
     apellidos VARCHAR(255) NOT NULL,
     edad INT NOT NULL,
     telefono VARCHAR(255) NOT NULL,
-    correo_verificado BOOLEAN DEFAULT FALSE,
-    telefono_verificado BOOLEAN DEFAULT FALSE
 )
+
+CREATE TABLE direccion (
+    id_usuario INT REFERENCES usuarios(id_usuario) NOT NULL,
+    id_direccion SERIAL PRIMARY KEY,
+    calle VARCHAR(255),
+    numero_exterior VARCHAR(10),
+    numero_interior VARCHAR(10),
+    colonia VARCHAR(255),
+    cp VARCHAR(10),
+    municipio VARCHAR(255),
+    estado VARCHAR(255),
+    tipo_vivienda VARCHAR(50),
+);
+
+CREATE TABLE verificacion (
+    id_usuario INT REFERENCES usuarios(id_usuario) NOT NULL,
+    id_verificacion SERIAL PRIMARY KEY,
+    verificacion_correo BOOLEAN DEFAULT FALSE,
+    verificacion_telefono BOOLEAN DEFAULT FALSE,
+    verificacion_identidad BOOLEAN DEFAULT FALSE,
+    verificacion_id BOOLEAN DEFAULT FALSE
+);
 
 CREATE TABLE historial (
     id_usuario INT REFERENCES usuarios(id_usuario) NOT NULL,

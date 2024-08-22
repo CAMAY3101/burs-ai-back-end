@@ -14,6 +14,12 @@ const historialModel = {
             RETURNING id_historial;
         `;
         return await db.one(query, values);
+    },
+    getSalarioMensual: async (id_usuario) => {
+        console.log('historial model getSalarioMensual');
+        const result = await db.one('SELECT salario_mensual FROM historial WHERE id_usuario = $1', [id_usuario]);
+        console.log('historial model result', result);
+        return result
     }
 };
 

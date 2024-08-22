@@ -10,10 +10,6 @@ usuarioRouter.post('/createUser', usuarioController.createUser);
 usuarioRouter.post('/logout', usuarioController.logout);
 
 usuarioRouter.post('/updateDataUser', authenticateJWT, usuarioController.updateDataUser);
-usuarioRouter.post('/resendOTPCodeEmail', authenticateJWT, usuarioController.resendOTPCodeEmail);
-usuarioRouter.post('/resendOTPCodePhoneNumber', authenticateJWT, usuarioController.resendOTPCodePhoneNumber);
-usuarioRouter.post('/verifyEmail', authenticateJWT, usuarioController.verifyEmail);
-usuarioRouter.post('/verifyPhoneNumber', authenticateJWT, usuarioController.verifyPhoneNumber);
 usuarioRouter.get('/getVerificacionStepStatus', authenticateJWT, usuarioController.getVerificacionStepStatus);
 usuarioRouter.get('/getSecureEmailUser', authenticateJWT, usuarioController.getSecureEmailUser);
 usuarioRouter.get('/getSecurePhoneUser', authenticateJWT, usuarioController.getSecurePhoneUser);
