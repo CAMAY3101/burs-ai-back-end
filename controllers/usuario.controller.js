@@ -47,7 +47,7 @@ const usuarioController = {
                 httpOnly: false,
                 secure: true, // Solo en producción
                 sameSite: 'None',
-                maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
+                maxAge: 24 * 60 * 60 * 1000, // Duración de 1 día
             });
 
             res.status(200).json({
