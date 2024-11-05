@@ -60,6 +60,46 @@ CREATE TABLE historial (
     uso_prestamo VARCHAR(255)
 );
 
+CREATE TABLE documento_identidad (
+    id_usuario INT REFERENCES usuarios(id_usuario) NOT NULL,
+    id_ocr SERIAL PRIMARY KEY,
+    address VARCHAR(255),
+    address_city VARCHAR(100),
+    address_line_1 VARCHAR(255),
+    address_line_2 VARCHAR(255),
+    address_postal_code VARCHAR(20),
+    back_number VARCHAR(50),
+    birth_date VARCHAR(20),
+    curp VARCHAR(20),
+    document_class_code VARCHAR(50),
+    document_class_name VARCHAR(100),
+    document_number VARCHAR(50),
+    expiration_date VARCHAR(20),
+    first_name VARCHAR(100),
+    full_name VARCHAR(255),
+    given_name VARCHAR(100),
+    issue_date VARCHAR(20),
+    issuing_state_code VARCHAR(20),
+    issuing_state_name VARCHAR(100),
+    middle_name VARCHAR(100),
+    mrz VARCHAR(255),
+    nationality_code VARCHAR(20),
+    nationality_name VARCHAR(100),
+    photo TEXT,
+    qr_barcode_center VARCHAR(255),
+    qr_barcode_left VARCHAR(255),
+    qr_barcode_right VARCHAR(255),
+    registration_number VARCHAR(50),
+    registration_year VARCHAR(4),
+    registration_year_and_verification_number VARCHAR(10),
+    sex VARCHAR(10),
+    signature TEXT,
+    surname VARCHAR(100),
+    verification_number VARCHAR(20),
+    registration_date TIMESTAMP
+);
+
+
 INSERT INTO usuarios (correo, contrasena, nombre, apellidos, edad, telefono) VALUES ('creyesa18@gmail.com', '123456', 'Carlos', 'Reyes', 22, '1234567890');
 ALTER TABLE usuarios
     ADD COLUMN contrasena VARCHAR(255) NOT NULL;

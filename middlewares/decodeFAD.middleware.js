@@ -2,21 +2,21 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv')
 dotenv.config()
 
-const authenticateJWT = (req, res, next) => {
+const decodeFADToken = (req, res, next) => {
     // Intentar obtener el token de una cookie
-    let token = req.cookies.token;
+    let access_token = req.cookies.access_token;
 
     // Si el token no está en las cookies, intentar obtenerlo del encabezado Authorization
-    if (!token && req.headers.authorization) {
-        token = req.headers.authorization.split(' ')[1]; // Bearer TOKEN
+    if (!access_token && req.headers.authorization) {
+        access_token = req.headers.authorization.split(' ')[1]; // Bearer TOKEN
     }
 
-    if (token) {
-        jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (access_token) {
+        jwt.verify(access_token, process.env.JWT_SECRET_FAD, (err, decodeFAD) => {
             if (err) {
                 return res.sendStatus(403); // Token no válido o expirado
             }
-            req.user = user;
+            req.fad = decodeFAD; // Adjuntar el payload del usuario al objeto de solicitud
             next();
         });
     } else {
@@ -24,4 +24,4 @@ const authenticateJWT = (req, res, next) => {
     }
 };
 
-module.exports = authenticateJWT;
+module.exports = decodeFADToken;

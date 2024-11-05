@@ -44,8 +44,8 @@ const usuarioController = {
 
             // Configurar la cookie con el token
             res.cookie('token', token, {
-                httpOnly: false,
-                secure: true, // Solo en producción
+                httpOnly: true,
+                secure: false, // Solo en producción
                 sameSite: 'None',
                 maxAge: 24 * 60 * 60 * 1000, // Duración de 1 día
             });
@@ -166,6 +166,7 @@ const usuarioController = {
     getSecureEmailUser: async (req, res, next) => {
         try {
             const userId = req.user.id_usuario;
+            console.log('User id on getSecureEmail: ' + userId);
             const result = await usuarioModel.getEmailUser(userId);
             // add *** to email
             const email = result.correo.split('@');

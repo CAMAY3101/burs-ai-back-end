@@ -27,6 +27,9 @@ const usuarioModel = {
     },
     getVerificacionStepStatus: async (userId) => {
         return await db.one('SELECT etapa_registro FROM usuarios WHERE id_usuario = $1', [userId]);
+    },
+    getPersonalDataUser: async (userId) => {
+        return await db.one('SELECT nombre, apellidos, correo, telefono FROM usuarios WHERE id_usuario = $1', [userId]);
     }, 
 };
 
