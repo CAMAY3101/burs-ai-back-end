@@ -39,8 +39,8 @@ const FADController = {
 
             res.cookie('access_token', access_token, {
                 httpOnly: true,
-                secure: false, // Solo en producción
-                sameSite: 'None',
+                secure: process.env.NODE_ENV === 'production', // Secure solo en producción
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // None en producción, Lax en desarrollo
                 maxAge: 24 * 60 * 60 * 1000, // Duración de 1 día
             });
 
