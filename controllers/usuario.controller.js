@@ -113,8 +113,14 @@ const usuarioController = {
             // Eliminar la cookie
             res.clearCookie('token', {
                 httpOnly: true,
-                secure: true, // asegúrate de que estás en una conexión HTTPS
-                sameSite: 'none'
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', 
+            });
+
+            res.clearCookie('access_token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', 
             });
 
             res.status(200).json({

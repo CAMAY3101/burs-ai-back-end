@@ -24,6 +24,10 @@ const FADModel = {
 
         return await db.one(query, [id_usuario, ...values]);
     },
+    getUserInFAD: async (id_usuario) => {
+        // Check in FAD if it exists id_usuario
+        return await db.oneOrNone('SELECT id_usuario FROM fad WHERE id_usuario = $1', [id_usuario]);
+    }, 
 
 };
 

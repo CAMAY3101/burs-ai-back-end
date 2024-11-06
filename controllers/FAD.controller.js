@@ -287,7 +287,23 @@ const FADController = {
             console.log('error try;', error)
             res.status(500).json({ error: 'Error al obtener los datos de la validación', details: error });
         }
-    }, 
+    },
+    getUserInFAD: async (req, res) => {
+        try {
+            const id_usuario = req.user.id_usuario;
+
+            const exist = await fadModel.getUserInFAD(id_usuario);
+
+            res.status(200).json({
+                status: 'Success',
+                exist: exist
+            })
+        } catch (error) {
+            console.log('error try;', error)
+            res.status(500).json({ error: 'Error al obtener la información de la validación', details: error });
+        }
+    },
+
 };
 
 module.exports = FADController;
