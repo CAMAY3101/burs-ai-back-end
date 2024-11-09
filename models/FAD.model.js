@@ -9,18 +9,21 @@ const FADModel = {
         return await db.one('SELECT validationid_fad FROM fad WHERE id_usuario = $1', [id_usuario])
     },
     addOCRInformation: async (id_usuario, data) => {
-        // Extraer las columnas y valores de data para el SQL
-        const columns = Object.keys(data).join(', ');
-        const values = Object.values(data);
+        // Lista de columnas en el orden correcto
+        const columns = ["address_line_1", "address_line_2", "address_postal_code", "back_number", "birth_date", "curp", "document_class_code", "document_class_name", "document_number", "expiration_date", "first_name", "full_name", "given_name", "issue_date", "issuing_state_code", "issuing_state_name", "middle_name", "mrz", "nationality_code", "nationality_name", "photo", "qr_barcode_center", "qr_barcode_left", "qr_barcode_right", "registration_number", "registration_year", "registration_year_and_verification_number", "sex", "signature", "surname", "verification_number", "address"];
 
+        // Obtener valores de `data` en el mismo orden que `columns`, usando null para columnas que faltan
+        const values = columns.map(column => data[column] ?? null);
+
+        // Crear placeholders dinámicos para cada valor
         const placeholders = values.map((_, index) => `$${index + 2}`).join(', ');
 
-        // Construir la consulta SQL
+        // Construir y ejecutar la consulta SQL
         const query = `
-            INSERT INTO documento_identidad (id_usuario, ${columns})
-            VALUES ($1, ${placeholders})
-            RETURNING id_ocr
-        `;
+        INSERT INTO documento_identidad (id_usuario, ${columns.join(', ')})
+        VALUES ($1, ${placeholders})
+        RETURNING id_ocr
+    `;
 
         return await db.one(query, [id_usuario, ...values]);
     },

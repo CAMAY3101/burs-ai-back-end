@@ -12,7 +12,7 @@ const usuarioModel = require('../models/usuario.model')
 const FADController = {
     generateToken: async (req, res) => {
         try {
-
+            console.log('generateToken Controller')
             // Define los parámetros que se enviarán en el body
             const params = qs.stringify({
                 grant_type: 'password',
@@ -45,7 +45,10 @@ const FADController = {
             });
 
             // Devuelve el token obtenido como respuesta
-            res.status(200).json(response.data);
+            res.status(200).json({
+                status:'success',
+                message: 'Token generado con éxito',
+            });
 
         } catch (error) {
             res.status(500).json({ error: 'Error al obtener el token' });
@@ -54,6 +57,7 @@ const FADController = {
     },
     createValidation: async (req, res) => {
         try {
+            console.log('createValidation Controller')
             const accessToken = req.fad.accessToken;
             const personalData = await userModel.getPersonalDataUser(req.user.id_usuario);
             const full_name = personalData.nombre + ' ' + personalData.apellidos;
@@ -227,6 +231,7 @@ const FADController = {
     },
     getValidationStep: async (req, res) => {
         try {
+            console.log('getValidationStep Controller')
             const accessToken = req.fad.accessToken;
             const authorizationHeader = `Bearer ${accessToken}`
             const validationid_fad = await fadModel.getValidationID(req.user.id_usuario)
@@ -244,24 +249,26 @@ const FADController = {
                 { headers }
             );
             if (response.data.validation.status === "FINISHED") {
+                console.log('Success in fad')
                 const ocr_data = formatFAD.ocr(response.data.steps.captureId.data.ocr);
-                const apiResponse = await fadModel.registerValidationData(req.user.id_usuario, ocr_data);
+                console.log(response.data.steps.captureId.data.ocr);
+
+                const apiResponse = await fadModel.addOCRInformation(req.user.id_usuario, ocr_data);
                 await verificacionModel.updateIDVerificationStatus(req.user.id_usuario, true);
                 await verificacionModel.updateIdentityVerificationStatus(req.user.id_usuario, true);
-                await usuarioModel.updateVerificacionStepStatus(userId, 'simulacion modelos');
-                res.status(200).json(
-                    {
-                        status:'success',
-                        message: 'Validación finalizada con éxito',
-                    }
-                );
+                await usuarioModel.updateVerificacionStepStatus(req.user.id_usuario, 'simulacion modelos');
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Validación finalizada con éxito',
+                });
             } else {
                 res.status(200).json({
                     status:'in progress',
-                    message: 'Validación en progreso, por favor ingresa al link que recibiste en tu correo y termina el proceso de verificacion',
+                    message: 'Validación en progreso, por favor ingresa al link que recibiste en tu correo y termina el proceso de verificacion. Cuando termines regresa y refresca la pagina',
                 });
             }
         } catch (error){
+            console.log('error try;', error)
             res.status(500).json({ error: 'Error al obtener el estado de la validación', details: error });
         }
     }, 
@@ -290,12 +297,13 @@ const FADController = {
     },
     getUserInFAD: async (req, res) => {
         try {
+            console.log('getUserInFAD Controller')
             const id_usuario = req.user.id_usuario;
 
             const exist = await fadModel.getUserInFAD(id_usuario);
 
             res.status(200).json({
-                status: 'Success',
+                status: 'success',
                 exist: exist
             })
         } catch (error) {
