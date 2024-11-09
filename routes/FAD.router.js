@@ -7,5 +7,6 @@ FADRouter.post('/generateToken', FADController.generateToken);
 FADRouter.post('/createValidation', decodeFADToken, FADController.createValidation);
 FADRouter.get('/getValidationStep', decodeFADToken, FADController.getValidationStep);
 FADRouter.get('/getValidationData', decodeFADToken, FADController.getValidationData);
+FADRouter.get('/getUserInFAD', FADController.getUserInFAD);
 
 module.exports = FADRouter; 

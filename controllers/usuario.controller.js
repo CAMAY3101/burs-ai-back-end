@@ -2,6 +2,8 @@ const { db } = require('../services/db.server')
 const { hashPassword, comparePassword } = require('../services/auth.service');
 const twilioService = require('../services/twilio.service');
 
+const qs = require('qs');
+const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv')
 dotenv.config()
@@ -49,6 +51,38 @@ const usuarioController = {
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // None en producción, Lax en desarrollo
                 maxAge: 24 * 60 * 60 * 1000, // Duración de 1 día
             });
+
+            if (userDB.etapa_registro === 'verificar identidad') {
+                const params = qs.stringify({
+                    grant_type: 'password',
+                    username: process.env.FAD_EMAIL,
+                    password: process.env.FAD_PASSWORD_ENCRYPT
+                });
+
+                const headers = {
+                    'Authorization': 'Basic Wm1Ga0xXTXlZeTF3YjNKMFlXdz06TWpoa04yUTNNbUppWVRWbVpHTTBObVl4Wmpka1lXSmpZbVEyTmpBMVpEVXpaVFZoT1dNMVpHVTROakF4TldVeE9EWmtaV0ZpTnpNd1lUUm1ZelV5WWc9PQ==',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Cache-Control': 'no-cache'
+                }
+
+                // Realiza la petición al endpoint de token
+                const response = await axios.post(
+                    'https://uat.firmaautografa.com/authorization-server/oauth/token ',
+                    params,
+                    { headers }
+                );
+
+                const access_token = jwt.sign({ accessToken: response.data.access_token }, process.env.JWT_SECRET_FAD, {
+                    expiresIn: "1d"
+                });
+
+                res.cookie('access_token', access_token, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production', // Secure solo en producción
+                    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // None en producción, Lax en desarrollo
+                    maxAge: 24 * 60 * 60 * 1000, // Duración de 1 día
+                });
+            }
 
             res.status(200).json({
                 status: 'success',
@@ -113,8 +147,14 @@ const usuarioController = {
             // Eliminar la cookie
             res.clearCookie('token', {
                 httpOnly: true,
-                secure: true, // asegúrate de que estás en una conexión HTTPS
-                sameSite: 'none'
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', 
+            });
+
+            res.clearCookie('access_token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', 
             });
 
             res.status(200).json({

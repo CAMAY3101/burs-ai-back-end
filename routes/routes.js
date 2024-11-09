@@ -11,19 +11,21 @@ router.use('/FAD', authenticateJWT, require('./FAD.router'))
 
 router.get('/check-cookie', (req, res) => {
     try {
-        // Verificar si la cookie está presente en la solicitud
-        if (req.cookies.token) {
-            // La cookie está presente, enviar una respuesta con un indicador de éxito
-            res.json({ tokenExist: true });
-        } else {
-            // La cookie no está presente, enviar una respuesta con un indicador de fallo
-            res.json({ tokenExist: false });
-        }
+        // Verificar si las cookies 'token' y 'access_token' están presentes en la solicitud
+        const tokenExist = Boolean(req.cookies.token);
+        const accessTokenExist = Boolean(req.cookies.access_token);
+
+        // Enviar una respuesta con el estado de ambas cookies
+        res.json({
+            tokenExist: tokenExist,
+            accessTokenExist: accessTokenExist
+        });
     } catch (error) {
         console.log("Error en check-cookie");
         console.log(error);
-        res.json({ error: error });
+        res.status(500).json({ error: 'Error en el servidor' });
     }
 });
+
 
 module.exports = router;
