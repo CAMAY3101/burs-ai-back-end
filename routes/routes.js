@@ -8,6 +8,7 @@ router.use('/verificacion', require('./verificacion.router'))
 router.use('/direccion', require('./direccion.router'))
 router.use('/modelos', require('./modelos.router'))
 router.use('/FAD', authenticateJWT, require('./FAD.router'))
+router.use('/STP', require('./STP.router'))
 
 router.get('/check-cookie', (req, res) => {
     try {
