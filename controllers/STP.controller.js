@@ -102,6 +102,7 @@ const STPController = {
             .then((response) => {
                 console.log('success', JSON.stringify(response));
                 res.status(200).json({
+                    firma,
                     cadenaOriginal,
                     response
                 })
