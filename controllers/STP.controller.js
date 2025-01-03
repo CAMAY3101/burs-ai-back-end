@@ -86,12 +86,17 @@ const STPController = {
     register: async (req, res) => {
         try {
             const peticion = req.body;
-            let cadenaOriginal = `||${peticion.institucionOperante}|${peticion.empresa}|||${peticion.claveRastreo}|${peticion.institucionContraparte}|${peticion.monto}|${peticion.tipoPago}|${peticion.tipoCuentaBeneficiario}||${peticion.cuentaOrdenante}||${peticion.tipoCuentaOrdenante}|${peticion.nombreBeneficiario}|${peticion.cuentaBeneficiario}|${peticion.rfcCurpBeneficiario}||||||${peticion.conceptoPago}||||||${peticion.referenciaNumerica}||||||||`;
-
-            let firma = stp_functions.getSign( cadenaOriginal );
-
+    
+            // Asegúrate de incluir los campos 'nombreOrdenante' y 'rfcCurpOrdenante' en la cadena original
+            let cadenaOriginal = `||${peticion.institucionContraparte}|${peticion.empresa}|||${peticion.claveRastreo}|${peticion.institucionOperante}|${peticion.monto}|${peticion.tipoPago}|${peticion.tipoCuentaOrdenante}|${peticion.nombreOrdenante}|${peticion.cuentaOrdenante}|${peticion.rfcCurpOrdenante}|${peticion.tipoCuentaBeneficiario}|${peticion.nombreBeneficiario}|${peticion.cuentaBeneficiario}|${peticion.rfcCurpBeneficiario}||||||${peticion.conceptoPago}||||||${peticion.referenciaNumerica}||||||||`;
+    
+            // Generar firma con la cadena original corregida
+            let firma = stp_functions.getSign(cadenaOriginal);
+    
+            // Añadir la firma al cuerpo de la petición
             peticion.firma = firma;
-
+    
+            // Realizar la solicitud al servicio STP
             rp({
                 url: 'https://demo.stpmex.com:7024/speiws/rest/ordenPago/registra',
                 method: 'PUT',
@@ -104,18 +109,21 @@ const STPController = {
                 res.status(200).json({
                     firma,
                     cadenaOriginal,
+                    peticionSTP: peticion,
                     response
-                })
+                });
             })
-            .catch((error)=>{
-                console.log('error', JSON.stringify(error))
+            .catch((error) => {
+                console.log('error', JSON.stringify(error));
+                res.status(500).json({ error: error });
             });
-
+    
         } catch (error) {
             console.error('Error en el proceso de registro:', error);
             return res.status(400).json({ error: error });
         }
     }
+    
 
 };
 
