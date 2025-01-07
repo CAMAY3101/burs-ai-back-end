@@ -6,7 +6,7 @@ const verificacionModel = require('../models/verificacion.model');
 const verificacionController = {
     sendOTPCodeEmail: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
 
             const emailModel = await usuarioModel.getEmailUser(userId);
             await twilioService.sendOTP_Email(emailModel.correo);
@@ -27,7 +27,7 @@ const verificacionController = {
     },
     sendOTPCodePhoneNumber: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
 
             const phoneModel = await usuarioModel.getPhoneUser(userId);
             await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
@@ -47,7 +47,7 @@ const verificacionController = {
     resendOTPCodeEmail: async (req, res, next) => {
         try {
             console.log('Resend Email otp')
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const emailModel = await usuarioModel.getEmailUser(userId);
             await twilioService.sendOTP_Email(emailModel.correo);
             res.status(200).json({
@@ -63,7 +63,7 @@ const verificacionController = {
     },
     resendOTPCodePhoneNumber: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const phoneModel = await usuarioModel.getPhoneUser(userId);
             const responseTwilio = await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
             console.log(responseTwilio);
@@ -80,7 +80,7 @@ const verificacionController = {
     },
     verifyEmail: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const usuario = {
                 code: req.body.code
             };
@@ -121,7 +121,7 @@ const verificacionController = {
     },
     verifyPhoneNumber: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const usuario = {
                 code: req.body.code
             };
@@ -167,7 +167,7 @@ const verificacionController = {
     },
     verifyIdentity: async (req, res, next) => {
         try{
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             await verificacionModel.updateIdentityVerificationStatus(userId, true);
             await usuarioModel.updateVerificacionStepStatus(userId, 'verificar id');
             res.status(200).json({
@@ -184,7 +184,7 @@ const verificacionController = {
     },
     verifyID: async (req, res, next) => {
         try{
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             await verificacionModel.updateIDVerificationStatus(userId, true);
             await usuarioModel.updateVerificacionStepStatus(userId, 'simulacion modelos');
             res.status(200).json({

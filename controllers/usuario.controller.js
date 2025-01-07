@@ -209,7 +209,7 @@ const usuarioController = {
     },
     getSecureEmailUser: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             console.log('User id on getSecureEmail: ' + userId);
             const result = await usuarioModel.getEmailUser(userId);
             // add *** to email
@@ -230,7 +230,7 @@ const usuarioController = {
     },
     getSecurePhoneUser: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const result = await usuarioModel.getPhoneUser(userId);
             // add *** to phone
             const phoneSecure = result.telefono.slice(3, 5) + '***' + result.telefono.slice(-3);
@@ -250,7 +250,7 @@ const usuarioController = {
 
     getVerificacionStepStatus: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const result = await usuarioModel.getVerificacionStepStatus(userId);
             res.status(200).json(
                 {
