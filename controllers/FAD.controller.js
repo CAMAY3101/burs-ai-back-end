@@ -59,7 +59,7 @@ const FADController = {
         try {
             console.log('createValidation Controller')
             const accessToken = req.fad.accessToken;
-            const personalData = await userModel.getPersonalDataUser(req.user.id_usuario);
+            const personalData = await userModel.getPersonalDataUser(req.user.uuid_user);
             const full_name = personalData.nombre + ' ' + personalData.apellidos;
 
             const authorizationHeader = `Bearer ${accessToken}`
@@ -220,7 +220,7 @@ const FADController = {
             );
             console.log('response try;', response.data)
 
-            const id_fad = await fadModel.registerValidationData(req.user.id_usuario, response.data.data)
+            const id_fad = await fadModel.registerValidationData(req.user.uuid_user, response.data.data)
 
             // Devuelve la respuesta del servidor
             res.status(200).json([response.data, id_fad]);  
@@ -234,7 +234,7 @@ const FADController = {
             console.log('getValidationStep Controller')
             const accessToken = req.fad.accessToken;
             const authorizationHeader = `Bearer ${accessToken}`
-            const validationid_fad = await fadModel.getValidationID(req.user.id_usuario)
+            const validationid_fad = await fadModel.getValidationID(req.user.uuid_user)
 
 
             const headers = {
@@ -253,10 +253,10 @@ const FADController = {
                 const ocr_data = formatFAD.ocr(response.data.steps.captureId.data.ocr);
                 console.log(response.data.steps.captureId.data.ocr);
 
-                const apiResponse = await fadModel.addOCRInformation(req.user.id_usuario, ocr_data);
-                await verificacionModel.updateIDVerificationStatus(req.user.id_usuario, true);
-                await verificacionModel.updateIdentityVerificationStatus(req.user.id_usuario, true);
-                await usuarioModel.updateVerificacionStepStatus(req.user.id_usuario, 'simulacion modelos');
+                const apiResponse = await fadModel.addOCRInformation(req.user.uuid_user, ocr_data);
+                await verificacionModel.updateIDVerificationStatus(req.user.uuid_user, true);
+                await verificacionModel.updateIdentityVerificationStatus(req.user.uuid_user, true);
+                await usuarioModel.updateVerificacionStepStatus(req.user.uuid_user, 'simulacion modelos');
                 res.status(200).json({
                     status: 'success',
                     message: 'Validación finalizada con éxito',
@@ -276,7 +276,7 @@ const FADController = {
         try {
             const accessToken = req.fad.accessToken;
             const authorizationHeader = `Bearer ${accessToken}`
-            const validationid_fad = await fadModel.getValidationID(req.user.id_usuario)
+            const validationid_fad = await fadModel.getValidationID(req.user.uuid_user)
 
             const headers = {
                 'Authorization': authorizationHeader,
@@ -298,7 +298,7 @@ const FADController = {
     getUserInFAD: async (req, res) => {
         try {
             console.log('getUserInFAD Controller')
-            const id_usuario = req.user.id_usuario;
+            const id_usuario = req.user.uuid_user;
 
             const exist = await fadModel.getUserInFAD(id_usuario);
 

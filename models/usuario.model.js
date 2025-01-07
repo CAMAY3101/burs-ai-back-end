@@ -2,34 +2,34 @@ const { db } = require('../services/db.server');
 const { comparePassword } = require('../services/auth.service')
 
 const usuarioModel = {
-    getUsuarios: async () => {
-        const result = await db.many('SELECT * FROM usuarios');
+    getclient: async () => {
+        const result = await db.many('SELECT * FROM client');
         return result;
     },
     login: async (correo) => {
-        return await db.oneOrNone('SELECT * FROM usuarios WHERE correo = $1', [correo]);
+        return await db.oneOrNone('SELECT * FROM client WHERE correo = $1', [correo]);
     },
-    createUser: async (correo, password, step) => {
-        // Retorna el resultado con RETURNING para obtener el id_usuario
-        return await db.one('INSERT INTO usuarios (correo, contrasena, nombre, apellidos, edad, telefono, etapa_registro ) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id_usuario', [correo, password, '', '', 0, '', step]);
+    createUser: async (uuid, correo, password, step) => {
+        // Retorna el resultado con RETURNING para obtener el uuid_client
+        return await db.one('INSERT INTO client (uuid_client, correo, contrasena, nombre, apellidos, edad, telefono, etapa_registro ) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING uuid_client', [uuid, correo, password, '', '', 0, '', step]);
     },
-    updateDataUser: async (id_usuario, nombre, apellidos, edad, telefono, step) => {
-        return await db.none('UPDATE usuarios SET nombre = $2, apellidos = $3, edad = $4, telefono = $5, etapa_registro = $6 WHERE id_usuario = $1', [id_usuario, nombre, apellidos, edad, telefono, step]);
+    updateDataUser: async (uuid_client, nombre, apellidos, edad, telefono, step) => {
+        return await db.none('UPDATE client SET nombre = $2, apellidos = $3, edad = $4, telefono = $5, etapa_registro = $6 WHERE uuid_client = $1', [uuid_client, nombre, apellidos, edad, telefono, step]);
     },
-    getEmailUser: async (id_usuario) => {
-        return await db.one('SELECT correo FROM usuarios WHERE id_usuario = $1', [id_usuario]);
+    getEmailUser: async (uuid_client) => {
+        return await db.one('SELECT correo FROM client WHERE uuid_client = $1', [uuid_client]);
     },
-    getPhoneUser: async (id_usuario) => {
-        return await db.one('SELECT telefono FROM usuarios WHERE id_usuario = $1', [id_usuario]);
+    getPhoneUser: async (uuid_client) => {
+        return await db.one('SELECT telefono FROM client WHERE uuid_client = $1', [uuid_client]);
     },
-    updateVerificacionStepStatus: async (userId, step) => {
-        return await db.none('UPDATE usuarios SET etapa_registro = $1 WHERE id_usuario = $2', [step, userId]);
+    updateVerificacionStepStatus: async (uuid_client, step) => {
+        return await db.none('UPDATE client SET etapa_registro = $1 WHERE uuid_client = $2', [step, uuid_client]);
     },
-    getVerificacionStepStatus: async (userId) => {
-        return await db.one('SELECT etapa_registro FROM usuarios WHERE id_usuario = $1', [userId]);
+    getVerificacionStepStatus: async (uuid_client) => {
+        return await db.one('SELECT etapa_registro FROM client WHERE uuid_client = $1', [uuid_client]);
     },
-    getPersonalDataUser: async (userId) => {
-        return await db.one('SELECT nombre, apellidos, correo, telefono FROM usuarios WHERE id_usuario = $1', [userId]);
+    getPersonalDataUser: async (uuid_client) => {
+        return await db.one('SELECT nombre, apellidos, correo, telefono FROM client WHERE uuid_client = $1', [uuid_client]);
     }, 
 };
 

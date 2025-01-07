@@ -42,7 +42,7 @@ CREATE TABLE direction (
 
 CREATE TABLE verification (
     id_verification SERIAL PRIMARY KEY,
-    uuid_verification UUID NOT NULL UNIQUE,
+    uuid_verification UUID NOT NULL UNIQUE PRIMARY KEY,
     uuid_client UUID REFERENCES client(uuid_client) NOT NULL UNIQUE,
     verificacion_correo BOOLEAN DEFAULT FALSE,
     verificacion_telefono BOOLEAN DEFAULT FALSE,
@@ -52,7 +52,7 @@ CREATE TABLE verification (
 
 CREATE TABLE historial (
     id_historial SERIAL PRIMARY KEY,
-    uuid_historial UUID NOT NULL UNIQUE, -- UUID generado desde la API
+    uuid_historial UUID NOT NULL UNIQUE PRIMARY KEY,
     uuid_client UUID REFERENCES client(uuid_client) NOT NULL UNIQUE,
     salario_mensual INTEGER,
     ocupacion VARCHAR(255),
@@ -66,7 +66,7 @@ CREATE TABLE historial (
 
 CREATE TABLE fad (
     id_fad SERIAL PRIMARY KEY,
-    uuid_fad UUID NOT NULL UNIQUE,
+    uuid_fad UUID NOT NULL UNIQUE PRIMARY KEY,
     uuid_client UUID REFERENCES client(uuid_client) NOT NULL UNIQUE,
     key_fad VARCHAR(250000),
     vector_fad VARCHAR(250000),
@@ -75,7 +75,7 @@ CREATE TABLE fad (
 
 CREATE TABLE ocr (
     id_ocr SERIAL PRIMARY KEY UNIQUE,
-    uuid_ocr UUID NOT NULL UNIQUE,
+    uuid_ocr UUID NOT NULL UNIQUE PRIMARY KEY,
     uuid_client UUID REFERENCES client(uuid_client) NOT NULL UNIQUE,
     address TEXT,
     address_city VARCHAR(100),
