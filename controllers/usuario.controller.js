@@ -41,7 +41,7 @@ const usuarioController = {
                 return next(error);
             }
 
-            const token = jwt.sign({ id_usuario: userDB.id_usuario },
+            const token = jwt.sign({ uuid_user: userDB.uuid_client },
                 process.env.JWT_SECRET, {
                 expiresIn: "1d"
             });
