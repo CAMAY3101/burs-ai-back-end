@@ -223,7 +223,7 @@ const FADController = {
             const id_fad = await fadModel.registerValidationData(req.user.uuid_user, response.data.data)
 
             // Devuelve la respuesta del servidor
-            res.status(200).json([response.data, id_fad]);  
+            res.status(200).json([response.data, id_fad]);
         } catch (error) {
             console.log('error try;', error)
             res.status(500).json({ error: 'Error al crear la validación', details: error });
@@ -232,6 +232,7 @@ const FADController = {
     getValidationStep: async (req, res) => {
         try {
             console.log('getValidationStep Controller')
+            console.log(req.fad.accessToken);
             const accessToken = req.fad.accessToken;
             const authorizationHeader = `Bearer ${accessToken}`
             const validationid_fad = await fadModel.getValidationID(req.user.uuid_user)
@@ -249,18 +250,45 @@ const FADController = {
                 { headers }
             );
             if (response.data.validation.status === "FINISHED") {
-                console.log('Success in fad')
+                console.log('Success in fad, so we are on FINISHED')
                 const ocr_data = formatFAD.ocr(response.data.steps.captureId.data.ocr);
                 console.log(response.data.steps.captureId.data.ocr);
 
-                const apiResponse = await fadModel.addOCRInformation(req.user.uuid_user, ocr_data);
-                await verificacionModel.updateIDVerificationStatus(req.user.uuid_user, true);
-                await verificacionModel.updateIdentityVerificationStatus(req.user.uuid_user, true);
-                await usuarioModel.updateVerificacionStepStatus(req.user.uuid_user, 'simulacion modelos');
-                res.status(200).json({
-                    status: 'success',
-                    message: 'Validación finalizada con éxito',
-                });
+                try{
+
+                    const getClientOCRInformation = await fadModel.getClientInOCRInformation(req.user.uuid_user);
+                    console.log(" getclient uuid en tabla de OCR: ", getClientOCRInformation);
+
+                    //Unicamente agregar la información OCR si no existe un registro en la tabla con ese UUID del cliente.
+                    if(getClientOCRInformation===null){
+                        const apiResponse = await fadModel.addOCRInformation(req.user.uuid_user, ocr_data);
+                        // Unicamente actualizar cuando OCR se agregó correctamente.
+                        if(apiResponse){
+                            await verificacionModel.updateIDVerificationStatus(req.user.uuid_user, true);//Pone verificacion_id en TRUE
+                            await verificacionModel.updateIdentityVerificationStatus(req.user.uuid_user, true);//Pone verificacion_identidad en TRUE
+                            await usuarioModel.updateVerificacionStepStatus(req.user.uuid_user, 'simulacion modelos');//Pone client el campo etapa_registro='simulacion modelos'
+                        }
+                        else{
+                            throw new Error('Error al agregar valores a OCR del cliente.');
+                        }
+                    }else{
+                        throw new Error('Este error ocurre cuando ya hay un registro en la tabla OCR para este UUID client.');
+                    }
+
+                    // debugging: throw new Error('ESTE ERROR OCURRE SIN IMPORTAR QUE DA LA CONSULTA DE OCR INFORMATION, es decir en tabla OCR de la BD.');
+
+                    res.status(200).json({
+                        status: 'success',
+                        message: 'Validación finalizada con éxito.',
+                    });
+                }
+                catch(error){
+                    console.log(error);
+                    res.status(500).json({error: `Se intentó reingresar los datos del cliente a las tablas de verificación de estatus, cuando este ya fue verificado. Error:${error}`})
+                }
+
+
+
             } else {
                 res.status(200).json({
                     status:'in progress',
@@ -271,7 +299,7 @@ const FADController = {
             console.log('error try;', error)
             res.status(500).json({ error: 'Error al obtener el estado de la validación', details: error });
         }
-    }, 
+    },
     getValidationData: async (req, res) => {
         try {
             const accessToken = req.fad.accessToken;
@@ -282,7 +310,7 @@ const FADController = {
                 'Authorization': authorizationHeader,
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache'
-            }; 
+            };
 
             // Realiza la petición GET para obtener los datos de la validación
             const response = await axios.get(
