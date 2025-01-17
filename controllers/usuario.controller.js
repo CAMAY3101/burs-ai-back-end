@@ -1,11 +1,13 @@
+const qs = require('qs');
+const axios = require('axios');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
+const dotenv = require('dotenv');
+
 const { db } = require('../services/db.server')
 const { hashPassword, comparePassword } = require('../services/auth.service');
 const twilioService = require('../services/twilio.service');
 
-const qs = require('qs');
-const axios = require('axios');
-const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv')
 dotenv.config()
 
 const usuarioModel = require('../models/usuario.model');
@@ -39,7 +41,7 @@ const usuarioController = {
                 return next(error);
             }
 
-            const token = jwt.sign({ id_usuario: userDB.id_usuario },
+            const token = jwt.sign({ uuid_user: userDB.uuid_client },
                 process.env.JWT_SECRET, {
                 expiresIn: "1d"
             });
@@ -106,19 +108,23 @@ const usuarioController = {
                 contrasena: req.body.contrasena
             };
             const hashedPassword = await hashPassword(usuario.contrasena);
-            const newUserId = await usuarioModel.createUser(usuario.correo, hashedPassword, 'ingresar datos');
+            const uuid = uuidv4(); 
+            console.log('register uuid: ', uuid)
+            const newUserId = await usuarioModel.createUser(uuid, usuario.correo, hashedPassword, 'ingresar datos');
 
-            const token = jwt.sign({ id_usuario: newUserId.id_usuario },
+            const token = jwt.sign({ uuid_user: newUserId.uuid_client },
                 process.env.JWT_SECRET, {
                 expiresIn: "1d"
             });
+            console.log('token: ', token);
+            
 
             // Configurar la cookie con el token
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production', // Secure solo en producción
-                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // None en producción, Lax en desarrollo
-                maxAge: 24 * 60 * 60 * 1000 // Duración de 1 día
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+                maxAge: 24 * 60 * 60 * 1000
             });
 
             res.status(201).json({
@@ -129,7 +135,7 @@ const usuarioController = {
         } catch (error) {
             console.log("Error en createUser de usuario.controller.js");
             console.log(error);
-            if (error.code === '23505' && error.constraint === 'usuarios_correo_key') {
+            if (error.code === '23505' && error.constraint === 'client_correo_key') {
                 const error = new Error('El correo electrónico ya esta registrado');
                 error.statusCode = 400;
                 error.status = 'fail';
@@ -172,7 +178,7 @@ const usuarioController = {
     },
     updateDataUser: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const usuario = {
                 nombre: req.body.nombre,
                 apellidos: req.body.apellidos,
@@ -196,16 +202,16 @@ const usuarioController = {
             });
 
         } catch (error) {
-
             const errorUpdate = new Error();
             errorUpdate.statusCode = 500;
             errorUpdate.status = 'error';
+            errorUpdate.message = error;
             next(errorUpdate);
         }
     },
     getSecureEmailUser: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             console.log('User id on getSecureEmail: ' + userId);
             const result = await usuarioModel.getEmailUser(userId);
             // add *** to email
@@ -226,7 +232,7 @@ const usuarioController = {
     },
     getSecurePhoneUser: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const result = await usuarioModel.getPhoneUser(userId);
             // add *** to phone
             const phoneSecure = result.telefono.slice(3, 5) + '***' + result.telefono.slice(-3);
@@ -246,7 +252,7 @@ const usuarioController = {
 
     getVerificacionStepStatus: async (req, res, next) => {
         try {
-            const userId = req.user.id_usuario;
+            const userId = req.user.uuid_user;
             const result = await usuarioModel.getVerificacionStepStatus(userId);
             res.status(200).json(
                 {

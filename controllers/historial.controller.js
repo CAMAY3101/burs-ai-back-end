@@ -4,7 +4,7 @@ const usuarioModel = require('../models/usuario.model')
 const historialController = {
     updateDataHistorial: async (req, res, next) => {
         try {
-            const id_usuario = req.user.id_usuario;
+            const id_usuario = req.user.uuid_user;
             const historial = {
                 salario_mensual: req.body.salario_mensual,
                 ocupacion: req.body.ocupacion,
@@ -27,6 +27,7 @@ const historialController = {
                 message: 'Historial actualizado',
             });
         } catch (error) {
+            console.log(error)
             const serverError = new Error();
             serverError.statusCode = 500;
             serverError.status = 'error';

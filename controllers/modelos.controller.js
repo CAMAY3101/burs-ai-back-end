@@ -4,7 +4,7 @@ const CalculosModelos = require('../evaluations/modelos')
 const modelosController = {
     getAllValuesModels: async (req, res, next) => {
         try{
-            const id_usuario = req.user.id_usuario;
+            const id_usuario = req.user.uuid_user;
             const parameters = {
                 expenses: req.query.expenses, // Para GET
                 monto_solicitado: req.query.monto_solicitado,
