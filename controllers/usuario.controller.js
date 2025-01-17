@@ -116,6 +116,8 @@ const usuarioController = {
                 process.env.JWT_SECRET, {
                 expiresIn: "1d"
             });
+            console.log('token: ', token);
+            
 
             // Configurar la cookie con el token
             res.cookie('token', token, {
@@ -133,7 +135,7 @@ const usuarioController = {
         } catch (error) {
             console.log("Error en createUser de usuario.controller.js");
             console.log(error);
-            if (error.code === '23505' && error.constraint === 'usuarios_correo_key') {
+            if (error.code === '23505' && error.constraint === 'client_correo_key') {
                 const error = new Error('El correo electrónico ya esta registrado');
                 error.statusCode = 400;
                 error.status = 'fail';

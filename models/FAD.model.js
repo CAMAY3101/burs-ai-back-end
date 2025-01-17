@@ -5,7 +5,7 @@ const usuarioModel = require("./usuario.model");
 const FADModel = {
     registerValidationData: async (uuid_client, data) => {
         const uuid = uuidv4()
-        return await db.one('INSERT INTO fad (uuid_fad, uuid_client, key_fad, vector_fad, validationid_fad) VALUES ($1, $2, $3, $4, $5) RETURNING id_fad', [uuid, uuid_client, data.key, data.vector, data.validationId])
+        return await db.one('INSERT INTO fad (uuid_fad, uuid_client, key_fad, vector_fad, validationid_fad) VALUES ($1, $2, $3, $4, $5) RETURNING uuid_fad', [uuid, uuid_client, data.key, data.vector, data.validationId])
     },
     getValidationID: async (uuid_client) => {
         return await db.one('SELECT validationid_fad FROM fad WHERE uuid_client = $1', [uuid_client])

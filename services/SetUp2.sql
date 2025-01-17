@@ -17,7 +17,7 @@ CREATE DATABASE dummy_test
 CREATE TABLE client (
     id_client SERIAL,
     uuid_client UUID NOT NULL UNIQUE PRIMARY KEY,
-    correo VARCHAR(255) NOT NULL,
+    correo VARCHAR(255) NOT NULL UNIQUE,
     contrasena VARCHAR(255) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     apellidos VARCHAR(255) NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE direction (
 );
 
 CREATE TABLE verification (
-    id_verification SERIAL PRIMARY KEY,
+    id_verification SERIAL,
     uuid_verification UUID NOT NULL UNIQUE PRIMARY KEY,
     uuid_client UUID REFERENCES client(uuid_client) NOT NULL UNIQUE,
     verificacion_correo BOOLEAN DEFAULT FALSE,
@@ -51,7 +51,7 @@ CREATE TABLE verification (
 );
 
 CREATE TABLE historial (
-    id_historial SERIAL PRIMARY KEY,
+    id_historial SERIAL,
     uuid_historial UUID NOT NULL UNIQUE PRIMARY KEY,
     uuid_client UUID REFERENCES client(uuid_client) NOT NULL UNIQUE,
     salario_mensual INTEGER,
@@ -65,7 +65,7 @@ CREATE TABLE historial (
 );
 
 CREATE TABLE fad (
-    id_fad SERIAL PRIMARY KEY,
+    id_fad SERIAL,
     uuid_fad UUID NOT NULL UNIQUE PRIMARY KEY,
     uuid_client UUID REFERENCES client(uuid_client) NOT NULL UNIQUE,
     key_fad VARCHAR(250000),
@@ -74,7 +74,7 @@ CREATE TABLE fad (
 );
 
 CREATE TABLE ocr (
-    id_ocr SERIAL PRIMARY KEY UNIQUE,
+    id_ocr SERIAL,
     uuid_ocr UUID NOT NULL UNIQUE PRIMARY KEY,
     uuid_client UUID REFERENCES client(uuid_client) NOT NULL UNIQUE,
     address TEXT,
