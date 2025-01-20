@@ -1,15 +1,15 @@
 const pgp = require('pg-promise')();
 
-const { DB_USERNAME2, DB_PASSWORD2, DB_HOST2, DB_PORT2, DB_NAME2 } = process.env;
+const { DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME } = process.env;
 
 let db;
 
 const cn = {
-    host: DB_HOST2,
-    port: DB_PORT2,
-    database: DB_NAME2,
-    user: DB_USERNAME2,
-    password: DB_PASSWORD2,
+    host: DB_HOST,
+    port: DB_PORT,
+    database: DB_NAME,
+    user: DB_USERNAME,
+    password: DB_PASSWORD,
     ssl: {
         rejectUnauthorized: false
     }
