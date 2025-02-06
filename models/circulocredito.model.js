@@ -16,6 +16,19 @@ const circuloCreditoModel = {
     );
   },
 
+  getSolicitersDataAndAddress: async (uuid_user) => {
+    return await db.oneOrNone(
+      `SELECT
+        c.nombre, c.apellidos, c.edad, c.telefono, c.correo,
+        d.calle, d.numero_exterior, d.numero_interior,
+        d.colonia, d.cp, d.municipio, d.estado, d.tipo_vivienda
+      FROM client c
+      INNER JOIN direction d
+      ON c.uuid_client = d.uuid_client
+      WHERE c.uuid_client = $1`, [uuid_user]
+    );
+  },
+
   updateSolicitersData: async (
     uuid_user,
     nombres,

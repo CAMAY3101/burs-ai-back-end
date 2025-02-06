@@ -10,6 +10,9 @@ circuloCreditoRouter.get('/getSolicitersData', authenticateJWT, circuloCreditoCo
 // Endpoint para obtener los datos del domicilio solicitante
 circuloCreditoRouter.get('/getSolicitersDataAddress', authenticateJWT, circuloCreditoController.getSolicitersDataAddress);
 
+// Endpoint para obtener los datos y el domicilio del solicitante
+circuloCreditoRouter.get('/getSolicitersDataAndAddress', authenticateJWT, circuloCreditoController.getSolicitersDataAndAddress);
+
 // Endpoint para actualizar los datos del solicitante
 circuloCreditoRouter.post('/updateSolicitersData', authenticateJWT, circuloCreditoController.updateSolicitersData);
 

@@ -62,6 +62,32 @@ const circuloCreditoController = {
       next(serverError);
     }
   },
+
+  async getSolicitersDataAndAddress(req, res, next) {
+    try {
+      const userId = req.user.uuid_user;
+      const result = await circuloCreditoModel.getSolicitersDataAndAddress(userId);
+
+      if (!result) {
+        const error = new Error("No se encontraron datos del solicitante");
+        error.statusCode = 404;
+        error.status = "error en datos";
+        return next(error);
+      }
+
+      res.status(200).json({
+        status: "success",
+        data: result,
+      });
+    } catch (error) {
+      const serverError = new Error();
+      serverError.statusCode = 500;
+      serverError.status = "error";
+      serverError.message = error;
+      next(serverError);
+    }
+  },
+
   async updateSolicitersData(req, res, next) {
     try {
       const userId = req.user.uuid_user;
