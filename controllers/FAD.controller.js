@@ -2,6 +2,11 @@ const axios = require('axios');
 const qs = require('qs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv')
+const PDFDocument = require('pdfkit');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const FormData = require('form-data');
 dotenv.config()
 const formatFAD = require('../services/format_fad');
 const userModel = require('../models/usuario.model');
@@ -30,7 +35,7 @@ const FADController = {
             const response = await axios.post(
                 'https://uat.firmaautografa.com/authorization-server/oauth/token ',
                 params,
-                {headers}
+                { headers }
             );
 
             const access_token = jwt.sign({ accessToken: response.data.access_token }, process.env.JWT_SECRET_FAD, {
@@ -46,7 +51,7 @@ const FADController = {
 
             // Devuelve el token obtenido como respuesta
             res.status(200).json({
-                status:'success',
+                status: 'success',
                 message: 'Token generado con éxito',
             });
 
@@ -74,7 +79,7 @@ const FADController = {
             const validationBody = {
                 processName: "Validation Test",
                 client: {
-                    name: full_name ,
+                    name: full_name,
                     mail: personalData.correo,
                     phone: personalData.telefono
                 },
@@ -254,24 +259,24 @@ const FADController = {
                 const ocr_data = formatFAD.ocr(response.data.steps.captureId.data.ocr);
                 console.log(response.data.steps.captureId.data.ocr);
 
-                try{
+                try {
 
                     const getClientOCRInformation = await fadModel.getClientInOCRInformation(req.user.uuid_user);
                     console.log(" getclient uuid en tabla de OCR: ", getClientOCRInformation);
 
                     //Unicamente agregar la información OCR si no existe un registro en la tabla con ese UUID del cliente.
-                    if(getClientOCRInformation===null){
+                    if (getClientOCRInformation === null) {
                         const apiResponse = await fadModel.addOCRInformation(req.user.uuid_user, ocr_data);
                         // Unicamente actualizar cuando OCR se agregó correctamente.
-                        if(apiResponse){
+                        if (apiResponse) {
                             await verificacionModel.updateIDVerificationStatus(req.user.uuid_user, true);//Pone verificacion_id en TRUE
                             await verificacionModel.updateIdentityVerificationStatus(req.user.uuid_user, true);//Pone verificacion_identidad en TRUE
                             await usuarioModel.updateVerificacionStepStatus(req.user.uuid_user, 'simulacion modelos');//Pone client el campo etapa_registro='simulacion modelos'
                         }
-                        else{
+                        else {
                             throw new Error('Error al agregar valores a OCR del cliente.');
                         }
-                    }else{
+                    } else {
                         throw new Error('Este error ocurre cuando ya hay un registro en la tabla OCR para este UUID client.');
                     }
 
@@ -282,20 +287,20 @@ const FADController = {
                         message: 'Validación finalizada con éxito.',
                     });
                 }
-                catch(error){
+                catch (error) {
                     console.log(error);
-                    res.status(500).json({error: `Se intentó reingresar los datos del cliente a las tablas de verificación de estatus, cuando este ya fue verificado. Error:${error}`})
+                    res.status(500).json({ error: `Se intentó reingresar los datos del cliente a las tablas de verificación de estatus, cuando este ya fue verificado. Error:${error}` })
                 }
 
 
 
             } else {
                 res.status(200).json({
-                    status:'in progress',
+                    status: 'in progress',
                     message: 'Validación en progreso, por favor ingresa al link que recibiste en tu correo y termina el proceso de verificacion. Cuando termines regresa y refresca la pagina',
                 });
             }
-        } catch (error){
+        } catch (error) {
             console.log('error try;', error)
             res.status(500).json({ error: 'Error al obtener el estado de la validación', details: error });
         }
@@ -339,6 +344,122 @@ const FADController = {
             res.status(500).json({ error: 'Error al obtener la información de la validación', details: error });
         }
     },
+    sendFiles: async (req, res) => {
+        try {
+
+            console.log('sendFiles Controller');
+            console.log('Enviando solicitud a la API externa con estos datos:');
+
+            const accessToken = req.fad.accessToken;
+            const personalData = await userModel.getPersonalDataUser(req.user.uuid_user);
+            const full_name = personalData.nombre + ' ' + personalData.apellidos;
+            const authorizationHeader = `Bearer ${accessToken}`
+
+            // Generar XML
+            const generateXML = () => {
+                const nombre = full_name;
+                const correo = personalData.correo;
+                const telefono = personalData.telefono;
+
+                const xmlContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<requisition>
+    <contractName>Contrato BURS Prueba</contractName>
+    <acceptanceLegend>Yo ${nombre} acepto la firma del documento Contrato BURS Prueba, hoy ${new Date().toLocaleDateString()}.</acceptanceLegend>
+    <acceptanceVideoNotRequired>true</acceptanceVideoNotRequired>
+    <validity>10</validity>
+    <idDocument>5501-0001</idDocument>
+    <contractType>Contrato</contractType>
+    <signOnWeb>true</signOnWeb>
+    <certificate>
+        <page>1</page>
+        <positionX1>8.48066</positionX1>
+        <positionX2>88.48066</positionX2>
+        <positionY1>78.4089</positionY1>
+        <positionY2>90.53880000000001</positionY2>
+    </certificate>
+    <signers>
+        <signerName>${nombre}</signerName>
+        <mail>${correo}</mail>
+        <phone>${telefono}</phone>
+        <authenticationType>Código de Seguridad</authenticationType>
+        <authenticationData>1234</authenticationData>
+        <order>1</order>
+        <signatures>
+            <centerX>50</centerX>
+            <centerY>65</centerY>
+            <page>1</page>
+            <positionX1>38</positionX1>
+            <positionX2>63</positionX2>
+            <positionY1>32</positionY1>
+            <positionY2>42</positionY2>
+            <signerType>Firmante</signerType>
+            <optional>false</optional>
+        </signatures>
+    </signers>
+</requisition>`;
+                return Buffer.from(xmlContent);
+            };
+
+            // Generar PDF
+            const generatePDF = (nombre) => {
+                return new Promise((resolve, reject) => {
+                    const doc = new PDFDocument();
+                    const tempPdfPath = path.join(__dirname, 'temp.pdf');
+                    const pdfStream = fs.createWriteStream(tempPdfPath);
+                    const hash = crypto.createHash('sha256');
+
+                    doc.pipe(pdfStream);
+                    doc.on('data', (chunk) => hash.update(chunk));
+
+                    doc.fontSize(20).text('Contrato de prueba Burs', { align: 'center' });
+                    doc.moveDown(2);
+                    doc.fontSize(12).text('Lorem ipsum odor amet, consectetuer adipiscing elit. Orci morbi vivamus purus; blandit ridiculus tincidunt phasellus cubilia. Nunc vulputate hendrerit tristique cubilia tempor nulla. Nec accumsan ultricies neque faucibus ante sapien. Mollis consectetur nisl lectus augue mattis. Nunc imperdiet urna conubia vehicula id habitant. Commodo platea senectus est convallis efficitur tempor scelerisque? Cras efficitur vel facilisis; commodo aliquet facilisis ridiculus.', { align: 'justify' });
+                    doc.moveDown(8);
+                    doc.moveTo(200, doc.y).lineTo(400, doc.y).stroke();
+                    doc.moveDown(1);
+                    doc.fontSize(12).text(`Este documento fue firmado por: ${nombre}`, { align: 'center' });
+                    doc.fontSize(12).text(`Fecha de generación: ${new Date().toLocaleString()}`, { align: 'center' });
+                    doc.end();
+
+                    pdfStream.on('finish', () => {
+                        const fileBuffer = fs.readFileSync(tempPdfPath);
+                        const fileHash = hash.digest('hex');
+                        fs.unlinkSync(tempPdfPath);
+                        resolve({ fileBuffer, fileHash });
+                    });
+
+                    pdfStream.on('error', (error) => reject(error));
+                });
+            };
+
+            // Obtener XML y PDF
+            const xmlBuffer = generateXML();
+            const { fileBuffer: pdfBuffer, fileHash } = await generatePDF();
+
+            // Crear form-data
+            const formData = new FormData();
+            formData.append('xml', xmlBuffer, { filename: 'archivo.xml', contentType: 'application/xml' });
+            formData.append('pdf', pdfBuffer, { filename: 'archivo.pdf', contentType: 'application/pdf' });
+            formData.append('hash', fileHash);
+
+            // Enviar archivos a la API externa
+            const response = await axios.post(
+                'https://uat.firmaautografa.com/requisitions/createRequisicionB2C',
+                formData,
+                {
+                    headers: {
+                        'Authorization': authorizationHeader,
+                        ...formData.getHeaders()
+                    }
+                }
+            );
+
+            res.status(response.status).json(response.data);
+        } catch (error) {
+            console.error('Error en sendFiles:', error.response ? error.response.data : error.message);
+            res.status(error.response?.status || 500).json({ error: error.response?.data || 'Error interno del servidor' });
+        }
+    }
 
 };
 
