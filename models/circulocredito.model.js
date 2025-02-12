@@ -25,7 +25,78 @@ const circuloCreditoModel = {
       FROM client c
       INNER JOIN direction d
       ON c.uuid_client = d.uuid_client
-      WHERE c.uuid_client = $1`, [uuid_user]
+      WHERE c.uuid_client = $1`,
+      [uuid_user]
+    );
+  },
+
+  updateSolicitersDataAndAddress: async (
+    uuid_user,
+    nombre,
+    apellidos,
+    correo,
+    telefono,
+    edad,
+    calle,
+    numero_exterior,
+    numero_interior,
+    colonia,
+    cp,
+    municipio,
+    estado,
+    tipo_vivienda
+  ) => {
+    return await db.one(
+      `WITH updated_client AS (
+        UPDATE client
+        SET
+          nombre = $2,
+          apellidos = $3,
+          correo = $4,
+          telefono = $5,
+          edad = $6
+        WHERE
+          uuid_client = $1
+        RETURNING *
+      ),
+      updated_direction AS (
+        UPDATE direction
+        SET
+          calle = $7,
+          numero_exterior = $8,
+          numero_interior = $9,
+          colonia = $10,
+          cp = $11,
+          municipio = $12,
+          estado = $13,
+          tipo_vivienda = $14
+        WHERE
+          uuid_client = $1
+        RETURNING *
+      )
+      SELECT
+        c.*,
+        d.*
+      FROM
+        updated_client c
+      JOIN
+        updated_direction d ON c.uuid_client = d.uuid_client;`,
+      [
+        uuid_user,
+        nombre,
+        apellidos,
+        correo,
+        telefono,
+        edad,
+        calle,
+        numero_exterior,
+        numero_interior,
+        colonia,
+        cp,
+        municipio,
+        estado,
+        tipo_vivienda,
+      ]
     );
   },
 

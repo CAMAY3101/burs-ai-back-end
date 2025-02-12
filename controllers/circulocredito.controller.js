@@ -3,13 +3,13 @@ const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const dotenv = require("dotenv");
-
 const { db } = require("../services/db.server");
 const { hashPassword, comparePassword } = require("../services/auth.service");
 const twilioService = require("../services/twilio.service");
 
 dotenv.config();
 
+const usuarioModel = require("../models/usuario.model");
 const circuloCreditoModel = require("../models/circulocredito.model");
 
 const circuloCreditoController = {
@@ -66,7 +66,9 @@ const circuloCreditoController = {
   async getSolicitersDataAndAddress(req, res, next) {
     try {
       const userId = req.user.uuid_user;
-      const result = await circuloCreditoModel.getSolicitersDataAndAddress(userId);
+      const result = await circuloCreditoModel.getSolicitersDataAndAddress(
+        userId
+      );
 
       if (!result) {
         const error = new Error("No se encontraron datos del solicitante");
@@ -74,6 +76,55 @@ const circuloCreditoController = {
         error.status = "error en datos";
         return next(error);
       }
+
+      res.status(200).json({
+        status: "success",
+        data: result,
+      });
+    } catch (error) {
+      const serverError = new Error();
+      serverError.statusCode = 500;
+      serverError.status = "error";
+      serverError.message = error;
+      next(serverError);
+    }
+  },
+
+  async updateSolicitersDataAndAddress(req, res, next) {
+    try {
+      const userId = req.user.uuid_user;
+      const {
+        nombre,
+        apellidos,
+        correo,
+        telefono,
+        edad,
+        calle,
+        numero_exterior,
+        numero_interior,
+        colonia,
+        cp,
+        municipio,
+        estado,
+        tipo_vivienda,
+      } = req.body;
+
+      const result = await circuloCreditoModel.updateSolicitersDataAndAddress(
+        userId,
+        nombre,
+        apellidos,
+        correo,
+        telefono,
+        edad,
+        calle,
+        numero_exterior,
+        numero_interior,
+        colonia,
+        cp,
+        municipio,
+        estado,
+        tipo_vivienda
+      );
 
       res.status(200).json({
         status: "success",
@@ -190,14 +241,43 @@ const circuloCreditoController = {
 
       const nip = Math.floor(1000 + Math.random() * 9000);
 
+      console.log("ESTAMOS EN ENVIAR NIP: ", { email, nip });
+
       if (email) {
-        await nodemailer.sendMail({
-          to: email,
-          subject: "Tu NIP de verificación",
-          text: `Tu NIP es: ${nip}`,
-        });
+        try {
+          const userId = req.user.uuid_user;
+
+          const emailModel = await usuarioModel.getEmailUser(userId);
+          await twilioService.sendOTP_Email(emailModel.correo);
+
+          res.status(200).json({
+            status: "success",
+            message: "Código de verificación enviado con éxito",
+          });
+        } catch (error) {
+          const errorSendEmail = new Error();
+          errorSendEmail.statusCode = 500;
+          errorSendEmail.status = "error en el envío de NIP por correo";
+          console.log(error);
+          next(errorSendEmail);
+        }
       } else if (telefono) {
-        await twilioService.sendSMS(telefono, `Tu NIP es: ${nip}`);
+        try {
+          const userId = req.user.uuid_user;
+
+          const phoneModel = await usuarioModel.getPhoneUser(userId);
+          await twilioService.sendOTP_PhoneNumber(phoneModel.telefono);
+
+          res.status(200).json({
+            status: "success",
+            message: "Código de verificación enviado con éxito",
+          });
+        } catch (error) {
+          const errorSendPhone = new Error();
+          errorSendPhone.statusCode = 500;
+          errorSendPhone.status = "error en el envío de NIP por teléfono";
+          next(errorSendPhone);
+        }
       } else {
         const error = new Error("Debes proporcionar un correo o teléfono");
         error.statusCode = 400;
@@ -210,6 +290,7 @@ const circuloCreditoController = {
         message: "NIP enviado correctamente",
       });
     } catch (error) {
+      console.log(error);
       const serverError = new Error();
       serverError.statusCode = 500;
       serverError.status = "error";
