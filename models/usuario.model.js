@@ -1,5 +1,6 @@
 const { db } = require('../services/db.server');
 const { comparePassword } = require('../services/auth.service')
+const { v4: uuidv4 } = require('uuid');
 
 const usuarioModel = {
     getclient: async () => {
@@ -9,13 +10,22 @@ const usuarioModel = {
     login: async (correo) => {
         return await db.oneOrNone('SELECT * FROM client WHERE correo = $1', [correo]);
     },
-    createUser: async (uuid, correo, password, step) => {
-        // Retorna el resultado con RETURNING para obtener el uuid_client
-        return await db.one('INSERT INTO client (uuid_client, correo, contrasena, nombre, apellidos, edad, telefono, etapa_registro ) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING uuid_client', [uuid, correo, password, '', '', 0, '', step]);
+    createUser: async (uuid, correo, password, step, fecha_nacimiento = '') => {
+    const fecha = fecha_nacimiento === "" ? null : fecha_nacimiento;
+        return await db.one('INSERT INTO client (uuid_client, correo, contrasena, nombre, apellidos, telefono, etapa_registro, fecha_nacimiento, curp, op_telefono ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING uuid_client', [uuid, correo, password, '', '', '', step, fecha, '' , '']);
     },
-    updateDataUser: async (uuid_client, nombre, apellidos, edad, telefono, step) => {
-        return await db.none('UPDATE client SET nombre = $2, apellidos = $3, edad = $4, telefono = $5, etapa_registro = $6 WHERE uuid_client = $1', [uuid_client, nombre, apellidos, edad, telefono, step]);
+    updateVerification: async (uuid_client, termsAccepted) => {
+        const uuidVerification = uuidv4();
+        return await db.none(
+          'INSERT INTO verification (uuid_verification, uuid_client, verificacion_tyc) VALUES($1, $2, $3)',
+          [uuidVerification, uuid_client, termsAccepted]
+        );
+      },
+      
+    updateDataUser: async (uuid_client, nombre, apellidos, telefono, step, fecha_nacimiento, curp, op_telefono) => {
+        return await db.none(`UPDATE client SET nombre = $2, apellidos = $3, telefono = $4, etapa_registro = $5, fecha_nacimiento = $6, curp = $7, op_telefono = $8 WHERE uuid_client = $1`, [uuid_client, nombre, apellidos, telefono, step, fecha_nacimiento, curp, op_telefono]);
     },
+      
     getEmailUser: async (uuid_client) => {
         return await db.one('SELECT correo FROM client WHERE uuid_client = $1', [uuid_client]);
     },

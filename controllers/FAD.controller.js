@@ -14,6 +14,10 @@ const verificacionModel = require('../models/verificacion.model');
 const fadModel = require('../models/FAD.model');
 const usuarioModel = require('../models/usuario.model')
 
+// Se importan las funciones separadas
+const { generateXML } = require('../files/xml');
+const { generatePDF } = require('../files/pdf');
+
 const FADController = {
     generateToken: async (req, res) => {
         try {
@@ -189,7 +193,7 @@ const FADController = {
                         "order": 4,
                         "show": true,
                         "input": {
-                            "legend": "Yo client.name acepto que todos los datos proporcionados son verídicos."
+                            "legend": "Yo client.name acepto que todos los datos proporcionados a BURS son verídicos."
                         }
                     }
                 },
@@ -280,8 +284,6 @@ const FADController = {
                         throw new Error('Este error ocurre cuando ya hay un registro en la tabla OCR para este UUID client.');
                     }
 
-                    // debugging: throw new Error('ESTE ERROR OCURRE SIN IMPORTAR QUE DA LA CONSULTA DE OCR INFORMATION, es decir en tabla OCR de la BD.');
-
                     res.status(200).json({
                         status: 'success',
                         message: 'Validación finalizada con éxito.',
@@ -353,88 +355,11 @@ const FADController = {
             const accessToken = req.fad.accessToken;
             const personalData = await userModel.getPersonalDataUser(req.user.uuid_user);
             const full_name = personalData.nombre + ' ' + personalData.apellidos;
-            const authorizationHeader = `Bearer ${accessToken}`
+            const authorizationHeader = `Bearer ${accessToken}`;
 
-            // Generar XML
-            const generateXML = () => {
-                const nombre = full_name;
-                const correo = personalData.correo;
-                const telefono = personalData.telefono;
-
-                const xmlContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<requisition>
-    <contractName>Contrato BURS Prueba</contractName>
-    <acceptanceLegend>Yo ${nombre} acepto la firma del documento Contrato BURS Prueba, hoy ${new Date().toLocaleDateString()}.</acceptanceLegend>
-    <acceptanceVideoNotRequired>true</acceptanceVideoNotRequired>
-    <validity>10</validity>
-    <idDocument>5501-0001</idDocument>
-    <contractType>Contrato</contractType>
-    <signOnWeb>true</signOnWeb>
-    <certificate>
-        <page>1</page>
-        <positionX1>8.48066</positionX1>
-        <positionX2>88.48066</positionX2>
-        <positionY1>78.4089</positionY1>
-        <positionY2>90.53880000000001</positionY2>
-    </certificate>
-    <signers>
-        <signerName>${nombre}</signerName>
-        <mail>${correo}</mail>
-        <phone>${telefono}</phone>
-        <authenticationType>Código de Seguridad</authenticationType>
-        <authenticationData>1234</authenticationData>
-        <order>1</order>
-        <signatures>
-            <centerX>50</centerX>
-            <centerY>65</centerY>
-            <page>1</page>
-            <positionX1>38</positionX1>
-            <positionX2>63</positionX2>
-            <positionY1>32</positionY1>
-            <positionY2>42</positionY2>
-            <signerType>Firmante</signerType>
-            <optional>false</optional>
-        </signatures>
-    </signers>
-</requisition>`;
-                return Buffer.from(xmlContent);
-            };
-
-            // Generar PDF
-            const generatePDF = (nombre) => {
-                return new Promise((resolve, reject) => {
-                    const doc = new PDFDocument();
-                    const tempPdfPath = path.join(__dirname, 'temp.pdf');
-                    const pdfStream = fs.createWriteStream(tempPdfPath);
-                    const hash = crypto.createHash('sha256');
-
-                    doc.pipe(pdfStream);
-                    doc.on('data', (chunk) => hash.update(chunk));
-
-                    doc.fontSize(20).text('Contrato de prueba Burs', { align: 'center' });
-                    doc.moveDown(2);
-                    doc.fontSize(12).text('Lorem ipsum odor amet, consectetuer adipiscing elit. Orci morbi vivamus purus; blandit ridiculus tincidunt phasellus cubilia. Nunc vulputate hendrerit tristique cubilia tempor nulla. Nec accumsan ultricies neque faucibus ante sapien. Mollis consectetur nisl lectus augue mattis. Nunc imperdiet urna conubia vehicula id habitant. Commodo platea senectus est convallis efficitur tempor scelerisque? Cras efficitur vel facilisis; commodo aliquet facilisis ridiculus.', { align: 'justify' });
-                    doc.moveDown(8);
-                    doc.moveTo(200, doc.y).lineTo(400, doc.y).stroke();
-                    doc.moveDown(1);
-                    doc.fontSize(12).text(`Este documento fue firmado por: ${nombre}`, { align: 'center' });
-                    doc.fontSize(12).text(`Fecha de generación: ${new Date().toLocaleString()}`, { align: 'center' });
-                    doc.end();
-
-                    pdfStream.on('finish', () => {
-                        const fileBuffer = fs.readFileSync(tempPdfPath);
-                        const fileHash = hash.digest('hex');
-                        fs.unlinkSync(tempPdfPath);
-                        resolve({ fileBuffer, fileHash });
-                    });
-
-                    pdfStream.on('error', (error) => reject(error));
-                });
-            };
-
-            // Obtener XML y PDF
-            const xmlBuffer = generateXML();
-            const { fileBuffer: pdfBuffer, fileHash } = await generatePDF();
+            // Usamos las funciones importadas:
+            const xmlBuffer = generateXML(full_name, personalData);
+            const { fileBuffer: pdfBuffer, fileHash } = await generatePDF(full_name);
 
             // Crear form-data
             const formData = new FormData();

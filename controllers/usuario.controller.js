@@ -103,6 +103,12 @@ const usuarioController = {
     },
     createUser: async (req, res, next) => {
         try {
+            if (!req.body.terms) {
+              const error = new Error('Debes aceptar los términos y condiciones de uso');
+              error.statusCode = 400;
+              error.status = 'fail';
+              return next(error);
+            }
             const usuario = {
                 correo: req.body.correo,
                 contrasena: req.body.contrasena
@@ -111,6 +117,9 @@ const usuarioController = {
             const uuid = uuidv4(); 
             console.log('register uuid: ', uuid)
             const newUserId = await usuarioModel.createUser(uuid, usuario.correo, hashedPassword, 'ingresar datos');
+           
+            await usuarioModel.updateVerification(newUserId.uuid_client, true);
+
 
             const token = jwt.sign({ uuid_user: newUserId.uuid_client },
                 process.env.JWT_SECRET, {
@@ -182,8 +191,10 @@ const usuarioController = {
             const usuario = {
                 nombre: req.body.nombre,
                 apellidos: req.body.apellidos,
-                edad: req.body.edad,
-                telefono: req.body.telefono
+                telefono: req.body.telefono,
+                fecha_nacimiento: req.body.fecha_nacimiento,
+                curp: req.body.curp,
+                op_telefono: req.body.op_telefono
             };
 
             // Si userId esta vacio, enviar error
@@ -194,7 +205,7 @@ const usuarioController = {
                 next(errorUserId);
             }
 
-            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.edad, usuario.telefono, 'ingresar historial');
+            await usuarioModel.updateDataUser(userId, usuario.nombre, usuario.apellidos, usuario.telefono, 'ingresar historial', usuario.fecha_nacimiento, usuario.curp, usuario.op_telefono);
 
             res.status(202).json({
                 status: 'success',
