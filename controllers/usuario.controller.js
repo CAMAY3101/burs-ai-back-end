@@ -196,6 +196,8 @@ const usuarioController = {
                 curp: req.body.curp,
                 op_telefono: req.body.op_telefono
             };
+            console.log('update data user')
+            console.log('usuario: ', usuario)
 
             // Si userId esta vacio, enviar error
             if (!userId) {
