@@ -26,6 +26,7 @@
     "pdfkit": "^0.16.0",
     "pg-promise": "^11.5.4",
     "qs": "^6.13.0",
+    "request-promise": "^4.2.6",
     "twilio": "^4.21.0",
     "uuid": "^11.0.3"
   }
