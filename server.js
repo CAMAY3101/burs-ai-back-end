@@ -27,8 +27,6 @@ const config = {
     "production": process.env.FRONTEND_URL_PRODUCTION,
 }
 
-console.log(' config[process.env.NODE_ENV]: ',  config[process.env.NODE_ENV]);
-
 
 app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Origin", config[process.env.NODE_ENV]);

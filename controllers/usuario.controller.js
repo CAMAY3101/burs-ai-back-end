@@ -31,6 +31,7 @@ const usuarioController = {
             };
             console.log("login");
             console.log(usuario.correo);
+            console.log(usuario.contrasena);
             const userDB = await usuarioModel.login(usuario.correo);
             const unhashedPassword = await comparePassword(usuario.contrasena, userDB.contrasena);
             if (!userDB || !unhashedPassword) {
