@@ -25,7 +25,7 @@ router.get('/check-cookie', (req, res) => {
     } catch (error) {
         console.log("Error en check-cookie");
         console.log(error);
-        res.status(500).json({ error: 'Error en el servidor' });
+        res.status(500).json({ error: 'Error en el servidor' }); 
     }
 });
 

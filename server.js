@@ -16,14 +16,19 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use(cors({
-    origin: [process.env.FRONTEND_URL_1, process.env.FRONTEND_URL_2],
+    origin: [process.env.FRONTEND_URL_DEVELOPMENT , process.env.FRONTEND_URL_STAGE, process.env.FRONTEND_URL_PRODUCTION],
     credentials: true,
     allowedHeaders: 'Content-Type,Authorization',
 }));
 
+const config = {
+    "development": process.env.FRONTEND_URL_DEVELOPMENT,
+    "stage": process.env.FRONTEND_URL_STAGE,
+    "production": process.env.FRONTEND_URL_PRODUCTION,
+}
 
 app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL_2 : process.env.FRONTEND_URL_1);
+    res.header("Access-Control-Allow-Origin", config[process.env.NODE_ENV]);
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
     res.header('Access-Control-Allow-Headers', 'content-type');
