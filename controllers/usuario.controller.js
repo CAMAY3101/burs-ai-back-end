@@ -108,7 +108,7 @@ const usuarioController = {
                 contrasena: req.body.contrasena
             };
             const hashedPassword = await hashPassword(usuario.contrasena);
-            const uuid = uuidv4(); 
+            const uuid = uuidv4();
             console.log('register uuid: ', uuid)
             const newUserId = await usuarioModel.createUser(uuid, usuario.correo, hashedPassword, 'ingresar datos');
 
@@ -117,7 +117,7 @@ const usuarioController = {
                 expiresIn: "1d"
             });
             console.log('token: ', token);
-            
+
 
             // Configurar la cookie con el token
             res.cookie('token', token, {
@@ -154,13 +154,13 @@ const usuarioController = {
             res.clearCookie('token', {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', 
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
             });
 
             res.clearCookie('access_token', {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', 
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
             });
 
             res.status(200).json({
@@ -267,5 +267,132 @@ const usuarioController = {
             next(errorGetStep);
         }
     },
+
+
+    // Alta de usuario (admin)
+    adminCreateUser: async (req, res, next) => {
+        try {
+            const { correo, contrasena, nombre, apellidos, edad, telefono, etapa_registro } = req.body;
+            const uuid = uuidv4();
+            const hashedPassword = await hashPassword(contrasena);
+
+            const newUser = await usuarioModel.adminCreateUser(
+                uuid, correo, hashedPassword, nombre, apellidos, edad, telefono, etapa_registro
+            );
+
+            res.status(201).json({
+                status: 'success',
+                message: 'Usuario creado con éxito',
+                user: newUser
+            });
+        } catch (error) {
+            console.log("Error en adminCreateUser de usuario.controller.js");
+            console.log(error);
+            const serverError = new Error('Error al crear el usuario');
+            serverError.statusCode = 500;
+            next(serverError);
+        }
+    },
+
+    // Modificación de usuario (admin)
+    adminUpdateUser: async (req, res, next) => {
+        try {
+            const { uuid } = req.params;
+            const { correo, nombre, apellidos, edad, telefono, etapa_registro } = req.body;
+
+            await usuarioModel.adminUpdateUser(
+                uuid, correo, nombre, apellidos, edad, telefono, etapa_registro
+            );
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Usuario actualizado con éxito'
+            });
+        } catch (error) {
+            console.log("Error en adminUpdateUser de usuario.controller.js");
+            console.log(error);
+            const serverError = new Error('Error al actualizar el usuario');
+            serverError.statusCode = 500;
+            next(serverError);
+        }
+    },
+
+    // Baja de usuario (admin)
+    adminDeleteUser: async (req, res, next) => {
+        try {
+            const { uuid } = req.params;
+
+            await usuarioModel.adminDeleteUser(uuid);
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Usuario eliminado con éxito'
+            });
+        } catch (error) {
+            console.log("Error en adminDeleteUser de usuario.controller.js");
+            console.log(error);
+            const serverError = new Error('Error al eliminar el usuario');
+            serverError.statusCode = 500;
+            next(serverError);
+        }
+    },
+
+    // Consulta individual de usuario (admin)
+    adminGetUser: async (req, res, next) => {
+        try {
+            const { uuid } = req.params;
+            const user = await usuarioModel.adminGetUser(uuid);
+
+            res.status(200).json({
+                status: 'success',
+                user
+            });
+        } catch (error) {
+            console.log("Error en adminGetUser de usuario.controller.js");
+            console.log(error);
+            const serverError = new Error('Error al obtener el usuario');
+            serverError.statusCode = 500;
+            next(serverError);
+        }
+    },
+
+    // Consulta general de usuarios (admin)
+    adminGetAllUsers: async (req, res, next) => {
+        try {
+            const users = await usuarioModel.adminGetAllUsers();
+
+            res.status(200).json({
+                status: 'success',
+                users
+            });
+        } catch (error) {
+            console.log("Error en adminGetAllUsers de usuario.controller.js");
+            console.log(error);
+            const serverError = new Error('Error al obtener los usuarios');
+            serverError.statusCode = 500;
+            next(serverError);
+        }
+    },
+
+    updateEtapaRegistro: async (req, res, next) => {
+        try {
+            const { uuid } = req.params;
+            const { etapa_registro } = req.body;
+
+            await usuarioModel.updateEtapaRegistro(uuid, etapa_registro);
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Etapa de registro actualizada con éxito',
+            });
+        } catch (error) {
+            console.error('Error en updateEtapaRegistro de usuario.controller.js');
+            console.error(error);
+            const serverError = new Error('Error al actualizar la etapa de registro');
+            serverError.statusCode = 500;
+            next(serverError);
+        }
+    },
+
 };
 module.exports = usuarioController;
