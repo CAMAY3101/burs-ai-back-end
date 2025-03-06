@@ -4,7 +4,7 @@ const usuarioModel = require('../models/usuario.model');
 const direccionController = {
     createDireccion: async (req, res, next) => {
         try {
-            const id_usuario = req.user.id_usuario;
+            const id_usuario = req.user.uuid_user;
             const direccion = {
                 calle: req.body.calle,
                 numero_exterior: req.body.numero_exterior,
@@ -22,7 +22,7 @@ const direccionController = {
                 direccion.tipo_vivienda
             );
 
-            await usuarioModel.updateVerificacionStepStatus(id_usuario, 'verificar correo')
+            await usuarioModel.updateVerificacionStepStatus(id_usuario, 'verificar telefono')
             res.status(200).json({ 
                 status: 'success',
                 message: 'Direccion creada'

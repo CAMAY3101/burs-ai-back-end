@@ -2,12 +2,21 @@ const axios = require('axios');
 const qs = require('qs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv')
+const PDFDocument = require('pdfkit');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const FormData = require('form-data');
 dotenv.config()
 const formatFAD = require('../services/format_fad');
 const userModel = require('../models/usuario.model');
 const verificacionModel = require('../models/verificacion.model');
 const fadModel = require('../models/FAD.model');
 const usuarioModel = require('../models/usuario.model')
+
+// Se importan las funciones separadas
+const { generateXML } = require('../files/xml');
+const { generatePDF } = require('../files/pdf');
 
 const FADController = {
     generateToken: async (req, res) => {
@@ -30,7 +39,7 @@ const FADController = {
             const response = await axios.post(
                 'https://uat.firmaautografa.com/authorization-server/oauth/token ',
                 params,
-                {headers}
+                { headers }
             );
 
             const access_token = jwt.sign({ accessToken: response.data.access_token }, process.env.JWT_SECRET_FAD, {
@@ -46,7 +55,7 @@ const FADController = {
 
             // Devuelve el token obtenido como respuesta
             res.status(200).json({
-                status:'success',
+                status: 'success',
                 message: 'Token generado con éxito',
             });
 
@@ -59,7 +68,7 @@ const FADController = {
         try {
             console.log('createValidation Controller')
             const accessToken = req.fad.accessToken;
-            const personalData = await userModel.getPersonalDataUser(req.user.id_usuario);
+            const personalData = await userModel.getPersonalDataUser(req.user.uuid_user);
             const full_name = personalData.nombre + ' ' + personalData.apellidos;
 
             const authorizationHeader = `Bearer ${accessToken}`
@@ -74,7 +83,7 @@ const FADController = {
             const validationBody = {
                 processName: "Validation Test",
                 client: {
-                    name: full_name ,
+                    name: full_name,
                     mail: personalData.correo,
                     phone: personalData.telefono
                 },
@@ -184,7 +193,7 @@ const FADController = {
                         "order": 4,
                         "show": true,
                         "input": {
-                            "legend": "Yo client.name acepto que todos los datos proporcionados son verídicos."
+                            "legend": "Yo client.name acepto que todos los datos proporcionados a BURS son verídicos."
                         }
                     }
                 },
@@ -220,10 +229,10 @@ const FADController = {
             );
             console.log('response try;', response.data)
 
-            const id_fad = await fadModel.registerValidationData(req.user.id_usuario, response.data.data)
+            const id_fad = await fadModel.registerValidationData(req.user.uuid_user, response.data.data)
 
             // Devuelve la respuesta del servidor
-            res.status(200).json([response.data, id_fad]);  
+            res.status(200).json([response.data, id_fad]);
         } catch (error) {
             console.log('error try;', error)
             res.status(500).json({ error: 'Error al crear la validación', details: error });
@@ -232,9 +241,10 @@ const FADController = {
     getValidationStep: async (req, res) => {
         try {
             console.log('getValidationStep Controller')
+            console.log(req.fad.accessToken);
             const accessToken = req.fad.accessToken;
             const authorizationHeader = `Bearer ${accessToken}`
-            const validationid_fad = await fadModel.getValidationID(req.user.id_usuario)
+            const validationid_fad = await fadModel.getValidationID(req.user.uuid_user)
 
 
             const headers = {
@@ -249,40 +259,65 @@ const FADController = {
                 { headers }
             );
             if (response.data.validation.status === "FINISHED") {
-                console.log('Success in fad')
+                console.log('Success in fad, so we are on FINISHED')
                 const ocr_data = formatFAD.ocr(response.data.steps.captureId.data.ocr);
                 console.log(response.data.steps.captureId.data.ocr);
 
-                const apiResponse = await fadModel.addOCRInformation(req.user.id_usuario, ocr_data);
-                await verificacionModel.updateIDVerificationStatus(req.user.id_usuario, true);
-                await verificacionModel.updateIdentityVerificationStatus(req.user.id_usuario, true);
-                await usuarioModel.updateVerificacionStepStatus(req.user.id_usuario, 'simulacion modelos');
-                res.status(200).json({
-                    status: 'success',
-                    message: 'Validación finalizada con éxito',
-                });
+                try {
+
+                    const getClientOCRInformation = await fadModel.getClientInOCRInformation(req.user.uuid_user);
+                    console.log(" getclient uuid en tabla de OCR: ", getClientOCRInformation);
+
+                    //Unicamente agregar la información OCR si no existe un registro en la tabla con ese UUID del cliente.
+                    if (getClientOCRInformation === null) {
+                        const apiResponse = await fadModel.addOCRInformation(req.user.uuid_user, ocr_data);
+                        // Unicamente actualizar cuando OCR se agregó correctamente.
+                        if (apiResponse) {
+                            await verificacionModel.updateIDVerificationStatus(req.user.uuid_user, true);//Pone verificacion_id en TRUE
+                            await verificacionModel.updateIdentityVerificationStatus(req.user.uuid_user, true);//Pone verificacion_identidad en TRUE
+                            await usuarioModel.updateVerificacionStepStatus(req.user.uuid_user, 'simulacion modelos');//Pone client el campo etapa_registro='simulacion modelos'
+                        }
+                        else {
+                            throw new Error('Error al agregar valores a OCR del cliente.');
+                        }
+                    } else {
+                        throw new Error('Este error ocurre cuando ya hay un registro en la tabla OCR para este UUID client.');
+                    }
+
+                    res.status(200).json({
+                        status: 'success',
+                        message: 'Validación finalizada con éxito.',
+                    });
+                }
+                catch (error) {
+                    console.log(error);
+                    res.status(500).json({ error: `Se intentó reingresar los datos del cliente a las tablas de verificación de estatus, cuando este ya fue verificado. Error:${error}` })
+                }
+
+
+
             } else {
                 res.status(200).json({
-                    status:'in progress',
+                    status: 'in progress',
                     message: 'Validación en progreso, por favor ingresa al link que recibiste en tu correo y termina el proceso de verificacion. Cuando termines regresa y refresca la pagina',
                 });
             }
-        } catch (error){
+        } catch (error) {
             console.log('error try;', error)
             res.status(500).json({ error: 'Error al obtener el estado de la validación', details: error });
         }
-    }, 
+    },
     getValidationData: async (req, res) => {
         try {
             const accessToken = req.fad.accessToken;
             const authorizationHeader = `Bearer ${accessToken}`
-            const validationid_fad = await fadModel.getValidationID(req.user.id_usuario)
+            const validationid_fad = await fadModel.getValidationID(req.user.uuid_user)
 
             const headers = {
                 'Authorization': authorizationHeader,
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache'
-            }; 
+            };
 
             // Realiza la petición GET para obtener los datos de la validación
             const response = await axios.get(
@@ -298,7 +333,7 @@ const FADController = {
     getUserInFAD: async (req, res) => {
         try {
             console.log('getUserInFAD Controller')
-            const id_usuario = req.user.id_usuario;
+            const id_usuario = req.user.uuid_user;
 
             const exist = await fadModel.getUserInFAD(id_usuario);
 
@@ -311,6 +346,45 @@ const FADController = {
             res.status(500).json({ error: 'Error al obtener la información de la validación', details: error });
         }
     },
+    sendFiles: async (req, res) => {
+        try {
+
+            console.log('sendFiles Controller');
+            console.log('Enviando solicitud a la API externa con estos datos:');
+
+            const accessToken = req.fad.accessToken;
+            const personalData = await userModel.getPersonalDataUser(req.user.uuid_user);
+            const full_name = personalData.nombre + ' ' + personalData.apellidos;
+            const authorizationHeader = `Bearer ${accessToken}`;
+
+            // Usamos las funciones importadas:
+            const xmlBuffer = generateXML(full_name, personalData);
+            const { fileBuffer: pdfBuffer, fileHash } = await generatePDF(full_name);
+
+            // Crear form-data
+            const formData = new FormData();
+            formData.append('xml', xmlBuffer, { filename: 'archivo.xml', contentType: 'application/xml' });
+            formData.append('pdf', pdfBuffer, { filename: 'archivo.pdf', contentType: 'application/pdf' });
+            formData.append('hash', fileHash);
+
+            // Enviar archivos a la API externa
+            const response = await axios.post(
+                'https://uat.firmaautografa.com/requisitions/createRequisicionB2C',
+                formData,
+                {
+                    headers: {
+                        'Authorization': authorizationHeader,
+                        ...formData.getHeaders()
+                    }
+                }
+            );
+
+            res.status(response.status).json(response.data);
+        } catch (error) {
+            console.error('Error en sendFiles:', error.response ? error.response.data : error.message);
+            res.status(error.response?.status || 500).json({ error: error.response?.data || 'Error interno del servidor' });
+        }
+    }
 
 };
 
