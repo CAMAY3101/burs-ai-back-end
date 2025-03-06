@@ -22,7 +22,7 @@ const direccionController = {
                 direccion.tipo_vivienda
             );
 
-            await usuarioModel.updateVerificacionStepStatus(id_usuario, 'verificar correo')
+            await usuarioModel.updateVerificacionStepStatus(id_usuario, 'verificar telefono')
             res.status(200).json({ 
                 status: 'success',
                 message: 'Direccion creada'
