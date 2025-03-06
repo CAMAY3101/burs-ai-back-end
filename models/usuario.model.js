@@ -40,7 +40,44 @@ const usuarioModel = {
     },
     getPersonalDataUser: async (uuid_client) => {
         return await db.one('SELECT nombre, apellidos, correo, telefono FROM client WHERE uuid_client = $1', [uuid_client]);
-    }, 
+    },
+
+    // Alta de usuario (admin)
+    adminCreateUser: async (uuid, correo, contrasena, nombre, apellidos, edad, telefono, etapa_registro) => {
+        return await db.one(
+            'INSERT INTO client (uuid_client, correo, contrasena, nombre, apellidos, edad, telefono, etapa_registro) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [uuid, correo, contrasena, nombre, apellidos, edad, telefono, etapa_registro]
+        );
+    },
+
+    // Modificación de usuario (admin)
+    adminUpdateUser: async (uuid, correo, nombre, apellidos, edad, telefono, etapa_registro) => {
+        return await db.none(
+            'UPDATE client SET correo = $2, nombre = $3, apellidos = $4, edad = $5, telefono = $6, etapa_registro = $7 WHERE uuid_client = $1',
+            [uuid, correo, nombre, apellidos, edad, telefono, etapa_registro]
+        );
+    },
+
+    // Baja de usuario (admin)
+    adminDeleteUser: async (uuid) => {
+        return await db.none(
+            'DELETE FROM client WHERE uuid_client = $1',
+            [uuid]
+        );
+    },
+
+    adminGetAllUsers: async () => {
+        return await db.manyOrNone('SELECT uuid_client, nombre, apellidos, correo, telefono, etapa_registro FROM client');
+    },
+
+    adminGetUser: async (uuid) => {
+        return await db.oneOrNone('SELECT uuid_client, nombre, apellidos, correo, telefono, etapa_registro FROM client WHERE uuid_client = $1', [uuid]);
+    },
+
+    updateEtapaRegistro: async (uuid, etapa_registro) => {
+        return await db.none('UPDATE client SET etapa_registro = $1 WHERE uuid_client = $2', [etapa_registro, uuid]);
+    },
+
 };
 
 module.exports = usuarioModel;
