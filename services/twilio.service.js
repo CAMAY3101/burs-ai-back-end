@@ -9,6 +9,8 @@ const sendOTP_Email = async (email) => {
                 to: email,
                 channel: 'email',
             });
+        console.log('verificationSendResponse: ', verificationSendResponse);
+        
         return verificationSendResponse;
     } catch (err) {
         throw err;
