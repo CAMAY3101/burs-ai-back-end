@@ -14,4 +14,12 @@ usuarioRouter.get('/getVerificacionStepStatus', authenticateJWT, usuarioControll
 usuarioRouter.get('/getSecureEmailUser', authenticateJWT, usuarioController.getSecureEmailUser);
 usuarioRouter.get('/getSecurePhoneUser', authenticateJWT, usuarioController.getSecurePhoneUser);
 
-module.exports = usuarioRouter; 
+// Nuevas rutas para ABCM
+usuarioRouter.post('/admin/createUser', authenticateJWT, usuarioController.adminCreateUser); // Alta
+usuarioRouter.put('/admin/updateUser/:uuid', authenticateJWT, usuarioController.adminUpdateUser); // Modificación
+usuarioRouter.delete('/admin/deleteUser/:uuid', authenticateJWT, usuarioController.adminDeleteUser); // Baja
+usuarioRouter.get('/admin/getUser/:uuid', authenticateJWT, usuarioController.adminGetUser); // Consulta individual
+usuarioRouter.get('/admin/getAllUsers', authenticateJWT, usuarioController.adminGetAllUsers); // Consulta general
+usuarioRouter.put('/admin/updateEtapaRegistro/:uuid', authenticateJWT, usuarioController.updateEtapaRegistro);
+
+module.exports = usuarioRouter;
