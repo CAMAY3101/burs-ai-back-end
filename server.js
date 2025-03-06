@@ -7,6 +7,8 @@ const errorHandler = require('./middlewares/errorHandler');
 const { db } = require('./services/db.server');
 
 const port = process.env.PORT
+console.log('port: ', port);
+
 
 const app = express(); 1
 

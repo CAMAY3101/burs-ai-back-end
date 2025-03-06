@@ -49,7 +49,7 @@ const stp_functions = {
     },
     firmarHash: (hash) => {
         try {
-            const keyPath = path.resolve(__dirname, './llavePrivada.pem');
+            const keyPath = path.resolve(__dirname, '../keyFiles/llavePrivada.pem');
             const privateKey = fs.readFileSync(keyPath, 'utf8');
             const sign = crypto.createSign('RSA-SHA256');
             sign.update(hash);
@@ -64,7 +64,7 @@ const stp_functions = {
         const sign = crypto.createSign('RSA-SHA256');
         sign.update(string);
         sign.end();
-        const keyPath = path.resolve(__dirname, './llavePrivada.pem');
+        const keyPath = path.resolve(__dirname, '../keyFiles/llavePrivada.pem');
         console.log('keyPath: ', keyPath)
         const key = fs.readFileSync(keyPath);
         console.log('key: ', key)
