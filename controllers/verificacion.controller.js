@@ -135,7 +135,7 @@ const verificacionController = {
             console.log('Verification check', verificationCheck);
 
             if (verificationCheck.status === 'approved') {
-                await usuarioModel.updateVerificacionStepStatus(userId, 'verificar identidad');
+                await usuarioModel.updateVerificacionStepStatus(userId, 'seleccion monto');
                 await verificacionModel.updatePhoneVerificationStatus(userId, true);
 
 
